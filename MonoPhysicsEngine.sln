@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoPhysicsEngine", "MonoPhysicsEngine\MonoPhysicsEngine.csproj", "{410D2A50-A700-4172-BE90-918A33DD8540}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoUtils", "lib\MonoUtils\MonoUtils\MonoUtils.csproj", "{AEF8151C-1ED7-46E8-A0FB-72BBE8CF1598}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{410D2A50-A700-4172-BE90-918A33DD8540}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{410D2A50-A700-4172-BE90-918A33DD8540}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{410D2A50-A700-4172-BE90-918A33DD8540}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{410D2A50-A700-4172-BE90-918A33DD8540}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AEF8151C-1ED7-46E8-A0FB-72BBE8CF1598}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AEF8151C-1ED7-46E8-A0FB-72BBE8CF1598}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AEF8151C-1ED7-46E8-A0FB-72BBE8CF1598}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AEF8151C-1ED7-46E8-A0FB-72BBE8CF1598}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
