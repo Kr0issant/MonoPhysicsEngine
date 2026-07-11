@@ -1,12 +1,14 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoUtils;
 using MonoUtils.Graphics;
 using MonoUtils.Input;
 using MonoUtils.Utility;
+using MonoPhysicsEngine;
 
-namespace MonoPhysicsEngine;
+namespace MonoPhysicsEngineTester;
 
 public class Game1 : Game
 {
@@ -81,10 +83,11 @@ public class Game1 : Game
         sprites.End();
         
         shapes.Begin(camera);
-        shapes.DrawRectangle(20f, 0f, 100f, -50f, Color.Red);
-        shapes.DrawRectangle(20f, 0f, 100f, -50f, Color.Black, Shapes.FillMode.Border, 4f);
-        shapes.DrawCircle(new Vector2(0f, 0f), 50f, Color.White);
-        shapes.DrawRegularPolygon(new Transform2D(new Vector2(0f, 0f), new Vector2(50, 50), x), 5, Color.Red);
+        // shapes.DrawRectangle(20f, 0f, 100f, -50f, Color.Red);
+        // shapes.DrawRectangle(20f, 0f, 100f, -50f, Color.Black, Shapes.FillMode.Border, 4f);
+        // shapes.DrawCircle(new Vector2(0f, 0f), 50f, Color.White);
+        // shapes.DrawRegularPolygon(new Transform2D(new Vector2(0f, 0f), new Vector2(50, 50), x), 5, Color.Red);
+        shapes.DrawLine(Vector2.Zero, new MonoVector(200, 150).ToVector2(), 2f, Color.Red);
         shapes.End();
         
         screen.Unset();

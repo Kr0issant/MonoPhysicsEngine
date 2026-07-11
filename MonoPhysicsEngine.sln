@@ -1,8 +1,12 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoPhysicsEngine", "MonoPhysicsEngine\MonoPhysicsEngine.csproj", "{410D2A50-A700-4172-BE90-918A33DD8540}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoUtils", "lib\MonoUtils\MonoUtils\MonoUtils.csproj", "{AEF8151C-1ED7-46E8-A0FB-72BBE8CF1598}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoUtilsTester", "lib\MonoUtils\MonoUtilsTester\MonoUtilsTester.csproj", "{059CEFAE-F783-4CF2-96E5-454625CF1FE4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoPhysicsEngineTester", "MonoPhysicsEngineTester\MonoPhysicsEngineTester.csproj", "{815FE670-1092-45EF-9613-5FE6997F4533}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoPhysicsEngine", "MonoPhysicsEngine\MonoPhysicsEngine.csproj", "{26419D57-7029-4571-BED0-3445BADBE200}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -10,13 +14,21 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{410D2A50-A700-4172-BE90-918A33DD8540}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{410D2A50-A700-4172-BE90-918A33DD8540}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{410D2A50-A700-4172-BE90-918A33DD8540}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{410D2A50-A700-4172-BE90-918A33DD8540}.Release|Any CPU.Build.0 = Release|Any CPU
 		{AEF8151C-1ED7-46E8-A0FB-72BBE8CF1598}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{AEF8151C-1ED7-46E8-A0FB-72BBE8CF1598}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AEF8151C-1ED7-46E8-A0FB-72BBE8CF1598}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AEF8151C-1ED7-46E8-A0FB-72BBE8CF1598}.Release|Any CPU.Build.0 = Release|Any CPU
+		{059CEFAE-F783-4CF2-96E5-454625CF1FE4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{059CEFAE-F783-4CF2-96E5-454625CF1FE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{059CEFAE-F783-4CF2-96E5-454625CF1FE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{059CEFAE-F783-4CF2-96E5-454625CF1FE4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{815FE670-1092-45EF-9613-5FE6997F4533}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{815FE670-1092-45EF-9613-5FE6997F4533}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{815FE670-1092-45EF-9613-5FE6997F4533}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{815FE670-1092-45EF-9613-5FE6997F4533}.Release|Any CPU.Build.0 = Release|Any CPU
+		{26419D57-7029-4571-BED0-3445BADBE200}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{26419D57-7029-4571-BED0-3445BADBE200}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{26419D57-7029-4571-BED0-3445BADBE200}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{26419D57-7029-4571-BED0-3445BADBE200}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
