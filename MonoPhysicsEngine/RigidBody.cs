@@ -52,7 +52,7 @@ public sealed class RigidBody
         this.rotation = 0f;
     }
 
-    public void Move(MonoVector amount)
+    public void MoveBy(MonoVector amount)
     {
         this.position += amount;
     }
@@ -60,6 +60,11 @@ public sealed class RigidBody
     public void MoveTo(MonoVector position)
     {
         this.position = position;
+    }
+    
+    public void AddVelocity(MonoVector force)
+    {
+        linearVelocity += force;
     }
 
     public static bool CreateCircleBody(MonoVector position, float radius, float density, bool isStatic, float restitution, out RigidBody body, out string errorMessage)

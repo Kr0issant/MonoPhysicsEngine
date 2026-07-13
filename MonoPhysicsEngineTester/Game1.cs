@@ -58,10 +58,10 @@ public class Game1 : Game
 
         camera.Zoom = DEFAULT_ZOOM;
         camera.GetScreenBounds(out float left, out float right, out float bottom, out float top);
-        Console.WriteLine(left);
-        Console.WriteLine(right);
-        Console.WriteLine(top);
-        Console.WriteLine(bottom);
+        // Console.WriteLine(left);
+        // Console.WriteLine(right);
+        // Console.WriteLine(top);
+        // Console.WriteLine(bottom);
         
         float padding = 20f;
         int numBodies = 10;
@@ -75,8 +75,8 @@ public class Game1 : Game
             string msg = null;
             bool success = false;
             
-            int type = rng.Next(0, 2);
-            // int type = (int)ShapeType.Circle;
+            // int type = rng.Next(0, 2);
+            int type = (int)ShapeType.Circle;
             
             int x = rng.Next((int)(left + padding), (int)(right - padding));
             int y = rng.Next((int)(bottom + padding), (int)(top - padding));
@@ -113,6 +113,8 @@ public class Game1 : Game
 
     protected override void Update(GameTime gameTime)
     {
+        /* --- Input Handling --- */
+        
         keyboard.Update();
         mouse.Update();
         
@@ -123,14 +125,67 @@ public class Game1 : Game
         if (keyboard.IsKeyClicked(Keys.F)) { screen.ToggleFullScreen(graphics); }
         
         if (mouse.IsMiddleButtonDown()) { camera.MoveBy(new Vector2(-mouse.DeltaX, mouse.DeltaY) * zoomFactor); }
-        if (mouse.IsScrollingUp()) { camera.MoveZ(35f * zoomFactor); }
-        if (mouse.IsScrollingDown()) { camera.MoveZ(-35f * zoomFactor); }
+        if (mouse.IsScrollingDown()) { camera.MoveZ(35f * zoomFactor); }
+        if (mouse.IsScrollingUp()) { camera.MoveZ(-35f * zoomFactor); }
         
         if (keyboard.IsKeyDown(Keys.Left)) { camera.MoveBy(new Vector2(-8f, 0f) * zoomFactor); }
         if (keyboard.IsKeyDown(Keys.Right)) { camera.MoveBy(new Vector2(8f, 0f) * zoomFactor); }
         if (keyboard.IsKeyDown(Keys.Up)) { camera.MoveBy(new Vector2(0f, 8f) * zoomFactor); }
         if (keyboard.IsKeyDown(Keys.Down)) { camera.MoveBy(new Vector2(0f, -8f) * zoomFactor); }
         if (keyboard.IsKeyClicked(Keys.R)) { camera.ResetZ(); camera.MoveBy(-camera.Position); }
+
+        float dx = 0f;
+        float dy = 0f;
+        float speed = 32f;
+        
+        if (keyboard.IsKeyDown(Keys.A)) { dx--; }
+        if (keyboard.IsKeyDown(Keys.D)) { dx++; }
+        if (keyboard.IsKeyDown(Keys.W)) { dy++; }
+        if (keyboard.IsKeyDown(Keys.S)) { dy--; }
+
+        if (mouse.IsLeftButtonDown())
+        {
+            Vector2 diff = mouse.GetScreenPosition(screen, camera) - bodies[0].Position.ToVector2();
+            if (diff.Length() > new Vector2(0.1f, 0.1f).Length())
+            {
+                dx = diff.X;
+                dy = diff.Y;
+            }
+        }
+        
+        /* --- Movement --- */
+        
+        if (dx != 0 || dy != 0)
+        {
+            MonoVector direction = new MonoVector(dx, dy).Normalize();
+            MonoVector velocity = direction * speed * (float)gameTime.ElapsedGameTime.TotalSeconds;
+            bodies[0].MoveBy(velocity);
+        }
+        
+        /* --- Collision Detection --- */
+
+        for (int i = 0; i < bodies.Count; i++)
+        {
+            RigidBody bodyA = bodies[i];
+            for (int j = i + 1; j < bodies.Count; j++)
+            {
+                RigidBody bodyB = bodies[j];
+
+                if (Collisions.CheckCircleCollision(bodyA.Position, bodyB.Position, bodyA.Radius, bodyB.Radius, out MonoVector normal, out float depth))
+                {
+                    bodyA.AddVelocity(normal * depth * bodyB.Mass / 100f * (float)gameTime.ElapsedGameTime.TotalSeconds);
+                    bodyB.AddVelocity(-normal * depth * bodyA.Mass / 100f * (float)gameTime.ElapsedGameTime.TotalSeconds);
+                }
+            }
+        }
+        
+        /* --- Collision Resolution --- */
+        for (int i = 0; i < bodies.Count; i++)
+        {
+            RigidBody body = bodies[i];
+            body.MoveBy(body.LinearVelocity * (float)gameTime.ElapsedGameTime.TotalSeconds);
+            body.AddVelocity(-body.LinearVelocity * (float)gameTime.ElapsedGameTime.TotalSeconds);
+        }
         
         base.Update(gameTime);
     }
