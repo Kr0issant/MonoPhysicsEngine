@@ -81,7 +81,8 @@ public class Game1 : Game
             int x = rng.Next((int)(left + padding), (int)(right - padding));
             int y = rng.Next((int)(bottom + padding), (int)(top - padding));
             Color color = new Color((float)rng.NextDouble(), (float)rng.NextDouble(), (float)rng.NextDouble());
-            double area = rng.NextDouble() * (World.MaxBodySize - World.MinBodySize) + World.MinBodySize;
+            // double area = rng.NextDouble() * (World.MaxBodySize - World.MinBodySize) + World.MinBodySize;
+            double area = 15f * 15f;
             float density = (float)(rng.NextDouble() * (World.MaxDensity - World.MinDensity) + World.MinDensity);
             
             if (type == 0)
@@ -173,19 +174,19 @@ public class Game1 : Game
 
                 if (Collisions.CheckCircleCollision(bodyA.Position, bodyB.Position, bodyA.Radius, bodyB.Radius, out MonoVector normal, out float depth))
                 {
-                    bodyA.AddVelocity(normal * depth * bodyB.Mass / 100f * (float)gameTime.ElapsedGameTime.TotalSeconds);
-                    bodyB.AddVelocity(-normal * depth * bodyA.Mass / 100f * (float)gameTime.ElapsedGameTime.TotalSeconds);
+                    bodyA.MoveBy(normal * depth * (bodyB.Mass / (bodyA.Mass + bodyB.Mass)));
+                    bodyB.MoveBy(-normal * depth * (bodyA.Mass / (bodyA.Mass + bodyB.Mass)));
                 }
             }
         }
         
         /* --- Collision Resolution --- */
-        for (int i = 0; i < bodies.Count; i++)
-        {
-            RigidBody body = bodies[i];
-            body.MoveBy(body.LinearVelocity * (float)gameTime.ElapsedGameTime.TotalSeconds);
-            body.AddVelocity(-body.LinearVelocity * (float)gameTime.ElapsedGameTime.TotalSeconds);
-        }
+        // for (int i = 0; i < bodies.Count; i++)
+        // {
+        //     RigidBody body = bodies[i];
+        //     body.MoveBy(body.LinearVelocity * (float)gameTime.ElapsedGameTime.TotalSeconds);
+        //     body.AddVelocity(-body.LinearVelocity * (float)gameTime.ElapsedGameTime.TotalSeconds);
+        // }
         
         base.Update(gameTime);
     }
