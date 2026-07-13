@@ -8,10 +8,10 @@ public readonly struct MonoVector : IEquatable<MonoVector>
 {
     public readonly float X;
     public readonly float Y;
-    public float Length => (float)Math.Sqrt((X * X) + (Y * Y));
+    public float Length => MathF.Sqrt((X * X) + (Y * Y));
     public float LengthSquared => (X * X) + (Y * Y);
 
-    public static readonly MonoVector ZeroVector = new MonoVector(0f, 0f);
+    public static readonly MonoVector Zero = new MonoVector(0f, 0f);
 
     public MonoVector(float x, float y)
     {
@@ -125,7 +125,9 @@ public readonly struct MonoVector : IEquatable<MonoVector>
 
     public static float DistanceBetween(MonoVector a, MonoVector b)
     {
-        return 0f; // WIP
+        float dx = a.X - b.X;
+        float dy = a.Y - b.Y;
+        return MathF.Sqrt((dx * dx) + (dy * dy));
     }
 
     public static float AngleBetween(MonoVector a, MonoVector b)
