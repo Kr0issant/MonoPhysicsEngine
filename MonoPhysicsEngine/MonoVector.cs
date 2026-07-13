@@ -96,6 +96,17 @@ public readonly struct MonoVector : IEquatable<MonoVector>
     {
         return !a.Equals(b);
     }
+
+    internal MonoVector Transform(BodyTransform transform)
+    {
+        float rx = transform.Cos * X -  transform.Sin * Y;
+        float ry = transform.Sin * X +  transform.Cos * Y;
+
+        float tx = rx + transform.Position.X;
+        float ty = ry + transform.Position.Y;
+        
+        return new MonoVector(tx, ty);
+    }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Equals(MonoVector other)

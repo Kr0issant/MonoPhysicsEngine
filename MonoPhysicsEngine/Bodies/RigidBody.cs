@@ -26,6 +26,11 @@ public sealed class RigidBody
     private MonoVector linearVelocity;
     private float angularVelocity;
     private float rotation;
+
+    private MonoVector[] vertices;
+    private MonoVector[] transformedVertices;
+    private bool transformUpdateRequired;
+    public int[] Triangles;
     
     public MonoVector Position => position;
     public MonoVector LinearVelocity => linearVelocity;
@@ -50,23 +55,35 @@ public sealed class RigidBody
         this.linearVelocity = MonoVector.Zero;
         this.angularVelocity = 0f;
         this.rotation = 0f;
+
+        if (shapeType is ShapeType.Box)
+        {
+            vertices = CreateBoxVertices(width, height);
+            Triangles = CreateBoxTriangles();
+            transformedVertices = new  MonoVector[vertices.Length];
+        }
+        transformUpdateRequired = true;
     }
 
     public void MoveBy(MonoVector amount)
     {
-        this.position += amount;
+        position += amount;
+        transformUpdateRequired = true;
     }
 
     public void MoveTo(MonoVector position)
     {
         this.position = position;
-    }
-    
-    public void AddVelocity(MonoVector force)
-    {
-        linearVelocity += force;
+        transformUpdateRequired = true;
     }
 
+    public void Rotate(float amount)
+    {
+        rotation += amount;
+        transformUpdateRequired = true;
+    }
+
+    /* --- Creation --- */
     public static bool CreateCircleBody(MonoVector position, float radius, float density, bool isStatic, float restitution, out RigidBody body, out string errorMessage)
     {
         body = null;
@@ -113,5 +130,53 @@ public sealed class RigidBody
         
         body = new RigidBody(position, density, mass, restitution, area, isStatic, ShapeType.Box, 0f, width, height);
         return true;
+    }
+    
+    /* --- Vertices --- */
+    public MonoVector[] GetTransformedVertices()
+    {
+        if (transformUpdateRequired)
+        {
+            BodyTransform transform = new BodyTransform(position, rotation);
+
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                transformedVertices[i] = vertices[i].Transform(transform);
+            }
+            
+            transformUpdateRequired = false;
+        }
+        
+        return transformedVertices;
+    }
+    
+    public static MonoVector[] CreateBoxVertices(float width, float height)
+    {
+        float left = -width / 2f;
+        float right = left + width;
+        float bottom = -height / 2f;
+        float top = bottom + height;
+
+        MonoVector[] vertices = new MonoVector[4];
+        vertices[0] = new MonoVector(left, top);
+        vertices[1] = new MonoVector(right, top);
+        vertices[2] = new MonoVector(right, bottom);
+        vertices[3] = new MonoVector(left, bottom);
+        
+        return vertices;
+    }
+
+    /* --- Triangulation --- */
+    public static int[] CreateBoxTriangles()
+    {
+        int[] triangles = new int[6];
+        triangles[0] = 0;
+        triangles[1] = 1;
+        triangles[2] = 2;
+        triangles[3] = 0;
+        triangles[4] = 2;
+        triangles[5] = 3;
+        
+        return triangles;
     }
 }

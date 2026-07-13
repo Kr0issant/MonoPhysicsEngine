@@ -10,6 +10,7 @@ using MonoUtils.Input;
 using MonoUtils.Utility;
 using MonoPhysicsEngine;
 using MonoPhysicsEngine.Content;
+using Util = MonoPhysicsEngine.Util;
 
 namespace MonoPhysicsEngineTester;
 
@@ -33,6 +34,7 @@ public class Game1 : Game
     
     private List<RigidBody> bodies;
     private List<Color> colors;
+    private Vector2[] vertexBuffer;
 
     public Game1()
     {
@@ -76,7 +78,7 @@ public class Game1 : Game
             bool success = false;
             
             // int type = rng.Next(0, 2);
-            int type = (int)ShapeType.Circle;
+            int type = (int)ShapeType.Box;
             
             int x = rng.Next((int)(left + padding), (int)(right - padding));
             int y = rng.Next((int)(bottom + padding), (int)(top - padding));
@@ -92,8 +94,8 @@ public class Game1 : Game
             }
             else if (type == 1)
             {
-                float maxDimen = MathF.Sqrt((float)area);
-                float width = maxDimen * (float)(rng.NextDouble() * 1.0 + 0.5);
+                float maxDimensions = MathF.Sqrt((float)area);
+                float width = maxDimensions * (float)(rng.NextDouble() * 1.0 + 0.5);
                 float height = (float)area / width;
         
                 success = RigidBody.CreateBoxBody(new MonoVector(x, y), width, height, density, false, 1f, out body, out msg);
@@ -165,20 +167,20 @@ public class Game1 : Game
         
         /* --- Collision Detection --- */
 
-        for (int i = 0; i < bodies.Count; i++)
-        {
-            RigidBody bodyA = bodies[i];
-            for (int j = i + 1; j < bodies.Count; j++)
-            {
-                RigidBody bodyB = bodies[j];
-
-                if (Collisions.CheckCircleCollision(bodyA.Position, bodyB.Position, bodyA.Radius, bodyB.Radius, out MonoVector normal, out float depth))
-                {
-                    bodyA.MoveBy(normal * depth * (bodyB.Mass / (bodyA.Mass + bodyB.Mass)));
-                    bodyB.MoveBy(-normal * depth * (bodyA.Mass / (bodyA.Mass + bodyB.Mass)));
-                }
-            }
-        }
+        // for (int i = 0; i < bodies.Count; i++)
+        // {
+        //     RigidBody bodyA = bodies[i];
+        //     for (int j = i + 1; j < bodies.Count; j++)
+        //     {
+        //         RigidBody bodyB = bodies[j];
+        //
+        //         if (Collisions.CheckCircleCollision(bodyA.Position, bodyB.Position, bodyA.Radius, bodyB.Radius, out MonoVector normal, out float depth))
+        //         {
+        //             bodyA.MoveBy(normal * depth * (bodyB.Mass / (bodyA.Mass + bodyB.Mass)));
+        //             bodyB.MoveBy(-normal * depth * (bodyA.Mass / (bodyA.Mass + bodyB.Mass)));
+        //         }
+        //     }
+        // }
         
         /* --- Collision Resolution --- */
         // for (int i = 0; i < bodies.Count; i++)
@@ -187,6 +189,7 @@ public class Game1 : Game
         //     body.MoveBy(body.LinearVelocity * (float)gameTime.ElapsedGameTime.TotalSeconds);
         //     body.AddVelocity(-body.LinearVelocity * (float)gameTime.ElapsedGameTime.TotalSeconds);
         // }
+        
         
         base.Update(gameTime);
     }
@@ -211,8 +214,9 @@ public class Game1 : Game
             }
             else if (type == ShapeType.Box)
             {
-                shapes.DrawRectangle(body.Position.ToVector2(), body.Width, body.Height, colors[i], Shapes.FillMode.Filled);
-                shapes.DrawRectangle(body.Position.ToVector2(), body.Width, body.Height, SHAPE_BORDER_COLOR, Shapes.FillMode.Border);
+                Util.ToVector2Array(body.GetTransformedVertices(), ref vertexBuffer);
+                shapes.DrawPolygon(vertexBuffer, body.Triangles, colors[i], Shapes.FillMode.Filled);
+                shapes.DrawPolygon(vertexBuffer, body.Triangles, SHAPE_BORDER_COLOR, Shapes.FillMode.Border);
             }
         }
         // shapes.DrawLine(Vector2.Zero, new MonoVector(2f, 1f).ToVector2(), 0.01f, Color.White);
