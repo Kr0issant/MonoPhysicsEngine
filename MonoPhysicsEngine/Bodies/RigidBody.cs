@@ -100,6 +100,7 @@ public sealed class RigidBody
     {
         position += linearVelocity * deltaTime;
         rotation += angularVelocity * deltaTime;
+        transformUpdateRequired = true;
     }
 
     public void UpdateFillMode(Shapes.FillMode fillMode) { this.fillMode = fillMode; }
