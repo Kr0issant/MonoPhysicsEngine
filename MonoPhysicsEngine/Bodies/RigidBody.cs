@@ -104,7 +104,7 @@ public sealed class RigidBody
 
     public void Step(float deltaTime)
     {
-        LinearVelocity += force * deltaTime;
+        LinearVelocity += (force / Mass) * deltaTime;
         force = MonoVector.Zero;
         
         position += LinearVelocity * deltaTime;

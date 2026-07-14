@@ -8,10 +8,10 @@ namespace MonoPhysicsEngine;
 
 public sealed class World
 {
-    public static readonly float MinBodySize = 0.01f * 0.01f;
+    public static readonly float MinBodySize = 1f * 1f; // cm2
     public static readonly float MaxBodySize = 64f * 64f;
 
-    public static readonly float MinDensity = 0.5f;
+    public static readonly float MinDensity = 0.5f; // g/cm3
     public static readonly float MaxDensity = 25f;
 
     public static readonly float SCREEN_SPAWN_PADDING = 20f;
@@ -51,6 +51,7 @@ public sealed class World
         /* --- Movement --- */
         for (int i = 0; i < bodies.Count; i++)
         {
+            // bodies[i].AddForce(gravity * bodies[i].Mass);
             bodies[i].Step(deltaTime);
         }
         

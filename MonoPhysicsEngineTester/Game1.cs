@@ -60,7 +60,7 @@ public class Game1 : Game
         camera.Zoom = DEFAULT_ZOOM;
 
         world = new World();
-        Util.SpawnRandomBodies(world, 100, camera, SHAPE_BORDER_COLOR, area: 15f * 15f);
+        Util.SpawnRandomBodies(world, 20, camera, SHAPE_BORDER_COLOR, area: 15f * 15f);
         
         timeScale = 1.0f;
         
@@ -100,7 +100,7 @@ public class Game1 : Game
         
         float dx = 0f;
         float dy = 0f;
-        float forceMagnitude = 48f;
+        float forceMagnitude = 100f;
         
         if (keyboard.IsKeyDown(Keys.A)) { dx--; }
         if (keyboard.IsKeyDown(Keys.D)) { dx++; }
@@ -119,7 +119,7 @@ public class Game1 : Game
         if (dx != 0 || dy != 0)
         {
             MonoVector forceDirection = new MonoVector(dx, dy).Normalize();
-            MonoVector force = forceDirection * forceMagnitude;
+            MonoVector force = forceDirection * forceMagnitude * world.GetBody(0).Mass;
             world.GetBody(0).AddForce(force);
         }
 
