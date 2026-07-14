@@ -1,4 +1,6 @@
 ﻿using System;
+using Microsoft.Xna.Framework;
+using MonoUtils.Graphics;
 
 namespace MonoPhysicsEngine.Content;
 
@@ -31,18 +33,29 @@ public sealed class RigidBody
     private MonoVector[] transformedVertices;
     private bool transformUpdateRequired;
     public int[] Triangles;
+
+    private Shapes.FillMode fillMode;
+    private Color fillColor;
+    private Color borderColor;
     
     public MonoVector Position => position;
     public MonoVector LinearVelocity => linearVelocity;
     public float AngularVelocity => angularVelocity;
     public float Rotation => rotation;
+    public Shapes.FillMode FillMode => fillMode;
+    public Color FillColor => fillColor;
+    public Color BorderColor => borderColor;
 
-    private RigidBody(MonoVector position, float density, float mass, float restitution, float area, bool isStatic, ShapeType shapeType, float radius, float width, float height)
+    private RigidBody(MonoVector position, float density, float mass, float restitution, float area, bool isStatic, ShapeType shapeType, float radius, float width, float height, Shapes.FillMode fillMode, Color fillColor, Color borderColor)
     {
         this.Density = density;
         this.Mass = mass;
         this.Restitution = restitution;
         this.Area = area;
+
+        this.fillMode = fillMode;
+        this.fillColor = fillColor;
+        this.borderColor = borderColor;
         
         this.IsStatic = isStatic;
         this.ShapeType = shapeType;
@@ -56,7 +69,7 @@ public sealed class RigidBody
         this.angularVelocity = 0f;
         this.rotation = 0f;
 
-        if (shapeType is ShapeType.Box)
+        if (shapeType == ShapeType.Box)
         {
             vertices = CreateBoxVertices(width, height);
             Triangles = CreateBoxTriangles();
@@ -83,8 +96,18 @@ public sealed class RigidBody
         transformUpdateRequired = true;
     }
 
+    public void Step(float deltaTime)
+    {
+        position += linearVelocity * deltaTime;
+        rotation += angularVelocity * deltaTime;
+    }
+
+    public void UpdateFillMode(Shapes.FillMode fillMode) { this.fillMode = fillMode; }
+    public void UpdateFillColor(Color fillColor) { this.fillColor = fillColor; }
+    public void UpdateBorderColor(Color borderColor) { this.borderColor = borderColor; }
+
     /* --- Creation --- */
-    public static bool CreateCircleBody(MonoVector position, float radius, float density, bool isStatic, float restitution, out RigidBody body, out string errorMessage)
+    public static bool CreateCircleBody(MonoVector position, float radius, float density, bool isStatic, float restitution, Shapes.FillMode fillMode, Color fillColor, Color borderColor, out RigidBody body, out string errorMessage)
     {
         body = null;
         errorMessage = string.Empty;
@@ -104,11 +127,11 @@ public sealed class RigidBody
         restitution = Math.Clamp(restitution, 0f, 1f);
         float mass = density * area;
         
-        body = new RigidBody(position, density, mass, restitution, area, isStatic, ShapeType.Circle, radius, 0f, 0f);
+        body = new RigidBody(position, density, mass, restitution, area, isStatic, ShapeType.Circle, radius, 0f, 0f, fillMode, fillColor, borderColor);
         return true;
     }
     
-    public static bool CreateBoxBody(MonoVector position, float width, float height, float density, bool isStatic, float restitution, out RigidBody body, out string errorMessage)
+    public static bool CreateBoxBody(MonoVector position, float width, float height, float density, bool isStatic, float restitution, Shapes.FillMode fillMode, Color fillColor, Color borderColor, out RigidBody body, out string errorMessage)
     {
         body = null;
         errorMessage = string.Empty;
@@ -128,7 +151,7 @@ public sealed class RigidBody
         restitution = Math.Clamp(restitution, 0f, 1f);
         float mass = density * area;
         
-        body = new RigidBody(position, density, mass, restitution, area, isStatic, ShapeType.Box, 0f, width, height);
+        body = new RigidBody(position, density, mass, restitution, area, isStatic, ShapeType.Box, 0f, width, height, fillMode, fillColor, borderColor);
         return true;
     }
     

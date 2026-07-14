@@ -31,10 +31,8 @@ public class Game1 : Game
     private const int DEFAULT_ZOOM = 4;
 
     private Color SHAPE_BORDER_COLOR = Color.Black;
-    
-    private List<RigidBody> bodies;
-    private List<Color> colors;
-    private Vector2[] vertexBuffer;
+
+    private World world;
 
     public Game1()
     {
@@ -59,51 +57,9 @@ public class Game1 : Game
         camera = new Camera(screen);
 
         camera.Zoom = DEFAULT_ZOOM;
-        camera.GetScreenBounds(out float left, out float right, out float bottom, out float top);
-        // Console.WriteLine(left);
-        // Console.WriteLine(right);
-        // Console.WriteLine(top);
-        // Console.WriteLine(bottom);
-        
-        float padding = 20f;
-        int numBodies = 10;
-        bodies = new List<RigidBody>(numBodies);
-        colors = new List<Color>(numBodies);
-        Random rng = new Random();
-        
-        for (int i = 0; i < numBodies; i++)
-        {
-            RigidBody body = null;
-            string msg = null;
-            bool success = false;
-            
-            int type = rng.Next(0, 2);
-            // int type = (int)ShapeType.Circle;
-            
-            int x = rng.Next((int)(left + padding), (int)(right - padding));
-            int y = rng.Next((int)(bottom + padding), (int)(top - padding));
-            Color color = new Color((float)rng.NextDouble(), (float)rng.NextDouble(), (float)rng.NextDouble());
-            // double area = rng.NextDouble() * (World.MaxBodySize - World.MinBodySize) + World.MinBodySize;
-            double area = 15f * 15f;
-            float density = (float)(rng.NextDouble() * (World.MaxDensity - World.MinDensity) + World.MinDensity);
-            
-            if (type == 0)
-            {
-                float radius = MathF.Sqrt((float)area / MathF.PI);
-                success = RigidBody.CreateCircleBody(new MonoVector(x, y), radius, density, false, 1f, out body, out msg);
-            }
-            else if (type == 1)
-            {
-                float maxDimensions = MathF.Sqrt((float)area);
-                float width = maxDimensions * (float)(rng.NextDouble() * 1.0 + 0.5);
-                float height = (float)area / width;
-        
-                success = RigidBody.CreateBoxBody(new MonoVector(x, y), width, height, density, false, 1f, out body, out msg);
-            }
-            
-            if (success) { bodies.Add(body); colors.Add(color); }
-            else Console.WriteLine($"[{i}] {msg}");
-        }
+
+        world = new World();
+        Util.SpawnRandomBodies(world, 10, camera, SHAPE_BORDER_COLOR, area: 15f * 15f);
         
         base.Initialize();
     }
@@ -121,7 +77,6 @@ public class Game1 : Game
         keyboard.Update();
         mouse.Update();
         
-        // Console.WriteLine(camera.Z);
         float zoomFactor = (float)(camera.Z / camera.ZBase);
         
         if (keyboard.IsKeyClicked(Keys.Escape)) { Exit(); }
@@ -145,82 +100,24 @@ public class Game1 : Game
         if (keyboard.IsKeyDown(Keys.D)) { dx++; }
         if (keyboard.IsKeyDown(Keys.W)) { dy++; }
         if (keyboard.IsKeyDown(Keys.S)) { dy--; }
-
+        
         if (mouse.IsLeftButtonDown())
         {
-            Vector2 diff = mouse.GetScreenPosition(screen, camera) - bodies[0].Position.ToVector2();
+            Vector2 diff = mouse.GetScreenPosition(screen, camera) - world.GetBody(0).Position.ToVector2();
             if (diff.Length() > new Vector2(0.1f, 0.1f).Length())
             {
                 dx = diff.X;
                 dy = diff.Y;
             }
         }
-        
-        /* --- Movement --- */
-        
         if (dx != 0 || dy != 0)
         {
             MonoVector direction = new MonoVector(dx, dy).Normalize();
             MonoVector velocity = direction * speed * (float)gameTime.ElapsedGameTime.TotalSeconds;
-            bodies[0].MoveBy(velocity);
+            world.GetBody(0).MoveBy(velocity);
         }
-        
-        /* --- Collision Detection --- */
 
-        for (int i = 0; i < bodies.Count; i++)
-        {
-            RigidBody bodyA = bodies[i];
-            for (int j = i + 1; j < bodies.Count; j++)
-            {
-                RigidBody bodyB = bodies[j];
-                
-                ShapeType shapeA = bodyA.ShapeType;
-                ShapeType shapeB = bodyB.ShapeType;
-                
-                MonoVector normal = MonoVector.Zero;
-                float depth = 0f;
-                bool resolve = false;
-
-                if (shapeA == shapeB)
-                {
-                    if (shapeA == ShapeType.Circle)
-                    {
-                        resolve = Collisions.CheckCircleCollision(bodyA.Position, bodyB.Position, bodyA.Radius, bodyB.Radius, out normal, out depth);
-                    }
-                    else if (shapeA == ShapeType.Box)
-                    {
-                        resolve = Collisions.CheckPolygonCollision(bodyA.GetTransformedVertices(), bodyB.GetTransformedVertices(), out normal, out depth);
-                    }
-                }
-                else
-                {
-                    if (shapeA == ShapeType.Circle && shapeB == ShapeType.Box)
-                    {
-                        resolve = Collisions.CheckCirclePolygonCollision(bodyA.Position, bodyA.Radius, bodyB.GetTransformedVertices(), out normal, out depth);
-                    }
-                    else if (shapeA == ShapeType.Box && shapeB == ShapeType.Circle)
-                    {
-                        resolve = Collisions.CheckCirclePolygonCollision(bodyB.Position, bodyB.Radius, bodyA.GetTransformedVertices(), out normal, out depth);
-                        normal = -normal;
-                    }
-                }
-
-                if (resolve)
-                {
-                    bodyA.MoveBy(normal * depth * (bodyB.Mass / (bodyA.Mass + bodyB.Mass)));
-                    bodyB.MoveBy(-normal * depth * (bodyA.Mass / (bodyA.Mass + bodyB.Mass)));
-                }
-            }
-        }
-        
-        /* --- Collision Resolution --- */
-        // for (int i = 0; i < bodies.Count; i++)
-        // {
-        //     RigidBody body = bodies[i];
-        //     body.MoveBy(body.LinearVelocity * (float)gameTime.ElapsedGameTime.TotalSeconds);
-        //     body.AddVelocity(-body.LinearVelocity * (float)gameTime.ElapsedGameTime.TotalSeconds);
-        // }
-        
+        world.Step((float)gameTime.ElapsedGameTime.TotalSeconds);
         
         base.Update(gameTime);
     }
@@ -234,24 +131,7 @@ public class Game1 : Game
         sprites.End();
         
         shapes.Begin(camera);
-        for (int i = 0; i < bodies.Count; i++)
-        {
-            RigidBody body = bodies[i];
-            ShapeType type = body.ShapeType;
-            if (type == ShapeType.Circle)
-            {
-                shapes.DrawCircle(body.Position.ToVector2(), body.Radius, colors[i], Shapes.FillMode.Filled);
-                shapes.DrawCircle(body.Position.ToVector2(), body.Radius, SHAPE_BORDER_COLOR, Shapes.FillMode.Border);
-            }
-            else if (type == ShapeType.Box)
-            {
-                Util.ToVector2Array(body.GetTransformedVertices(), ref vertexBuffer);
-                shapes.DrawPolygon(vertexBuffer, body.Triangles, colors[i], Shapes.FillMode.Filled);
-                shapes.DrawPolygon(vertexBuffer, body.Triangles, SHAPE_BORDER_COLOR, Shapes.FillMode.Border);
-            }
-        }
-        // shapes.DrawLine(Vector2.Zero, new MonoVector(2f, 1f).ToVector2(), 0.01f, Color.White);
-        // shapes.DrawCircle();
+        world.DrawShapes(shapes, world);
         shapes.End();
         
         screen.Unset();

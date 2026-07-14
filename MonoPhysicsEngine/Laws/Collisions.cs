@@ -1,9 +1,46 @@
 ﻿using System;
+using MonoPhysicsEngine.Content;
 
 namespace MonoPhysicsEngine;
 
 public static class Collisions
 {
+    public static bool CheckGeneralCollision(RigidBody bodyA, RigidBody bodyB, out MonoVector normal, out float depth)
+    {
+        ShapeType shapeA = bodyA.ShapeType;
+        ShapeType shapeB = bodyB.ShapeType;
+                
+        normal = MonoVector.Zero;
+        depth = 0f;
+
+        if (shapeA == shapeB)
+        {
+            if (shapeA == ShapeType.Circle)
+            {
+                return CheckCircleCollision(bodyA.Position, bodyB.Position, bodyA.Radius, bodyB.Radius, out normal, out depth);
+            }
+            if (shapeA == ShapeType.Box)
+            {
+                return CheckPolygonCollision(bodyA.GetTransformedVertices(), bodyB.GetTransformedVertices(), out normal, out depth);
+            }
+        }
+        else
+        {
+            if (shapeA == ShapeType.Circle && shapeB == ShapeType.Box)
+            {
+                return CheckCirclePolygonCollision(bodyA.Position, bodyA.Radius, bodyB.GetTransformedVertices(), out normal, out depth);
+            }
+            if (shapeA == ShapeType.Box && shapeB == ShapeType.Circle)
+            {
+                bool result = CheckCirclePolygonCollision(bodyB.Position, bodyB.Radius, bodyA.GetTransformedVertices(), out normal, out depth);
+                normal = -normal;
+                return result;
+            }
+        }
+
+        return false;
+    }
+    
     public static bool CheckCircleCollision(MonoVector centerA, MonoVector centerB, float radiusA, float radiusB, out MonoVector normal, out float depth)
     {
         normal = MonoVector.Zero;
