@@ -67,6 +67,7 @@ public sealed class World
                 {
                     bodyA.MoveBy(normal * depth * (bodyB.Mass / (bodyA.Mass + bodyB.Mass)));
                     bodyB.MoveBy(-normal * depth * (bodyA.Mass / (bodyA.Mass + bodyB.Mass)));
+                    Collisions.ResolveCollision(bodyA, bodyB, normal, depth);
                 }
             }
         }

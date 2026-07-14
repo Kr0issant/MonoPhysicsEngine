@@ -152,4 +152,16 @@ public static class Collisions
 
         return true;
     }
+
+    public static void ResolveCollision(RigidBody bodyA, RigidBody bodyB, MonoVector normal, float depth)
+    {
+        MonoVector relativeVelocity = bodyA.LinearVelocity - bodyB.LinearVelocity;
+        
+        float e = MathF.Min(bodyA.Restitution, bodyB.Restitution);
+        float j = -(1f + e) * MonoVector.Dot(relativeVelocity, normal);
+        j /= (1f / bodyA.Mass) + (1f / bodyB.Mass);
+        
+        bodyA.LinearVelocity += normal * j / bodyA.Mass;
+        bodyB.LinearVelocity -= normal * j / bodyB.Mass;
+    }
 }

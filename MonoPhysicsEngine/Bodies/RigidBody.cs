@@ -25,9 +25,9 @@ public sealed class RigidBody
     public readonly float Height;
     
     private MonoVector position;
-    private MonoVector linearVelocity;
     private float angularVelocity;
     private float rotation;
+    private MonoVector force;
 
     private MonoVector[] vertices;
     private MonoVector[] transformedVertices;
@@ -39,7 +39,7 @@ public sealed class RigidBody
     private Color borderColor;
     
     public MonoVector Position => position;
-    public MonoVector LinearVelocity => linearVelocity;
+    public MonoVector LinearVelocity { get; internal set; }
     public float AngularVelocity => angularVelocity;
     public float Rotation => rotation;
     public Shapes.FillMode FillMode => fillMode;
@@ -65,9 +65,10 @@ public sealed class RigidBody
         this.Height = height;
         
         this.position = position;
-        this.linearVelocity = MonoVector.Zero;
+        this.LinearVelocity = MonoVector.Zero;
         this.angularVelocity = 0f;
         this.rotation = 0f;
+        this.force = MonoVector.Zero;
 
         if (shapeType == ShapeType.Box)
         {
@@ -96,10 +97,19 @@ public sealed class RigidBody
         transformUpdateRequired = true;
     }
 
+    public void AddForce(MonoVector amount)
+    {
+        force += amount;
+    }
+
     public void Step(float deltaTime)
     {
-        position += linearVelocity * deltaTime;
+        LinearVelocity += force * deltaTime;
+        force = MonoVector.Zero;
+        
+        position += LinearVelocity * deltaTime;
         rotation += angularVelocity * deltaTime;
+        
         transformUpdateRequired = true;
     }
 

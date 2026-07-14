@@ -56,6 +56,12 @@ public readonly struct MonoVector : IEquatable<MonoVector>
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static MonoVector operator *(float s, MonoVector v)
+    {
+        return new MonoVector(v.X * s, v.Y * s);
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static float operator *(MonoVector a, MonoVector b)
     {
         return Dot(a, b);
