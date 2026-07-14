@@ -33,6 +33,7 @@ public class Game1 : Game
     private Color SHAPE_BORDER_COLOR = Color.Black;
 
     private World world;
+    private float timeScale;
 
     public Game1()
     {
@@ -59,7 +60,9 @@ public class Game1 : Game
         camera.Zoom = DEFAULT_ZOOM;
 
         world = new World();
-        Util.SpawnRandomBodies(world, 10, camera, SHAPE_BORDER_COLOR, area: 15f * 15f);
+        Util.SpawnRandomBodies(world, 100, camera, SHAPE_BORDER_COLOR, area: 15f * 15f);
+        
+        timeScale = 1.0f;
         
         base.Initialize();
     }
@@ -91,10 +94,13 @@ public class Game1 : Game
         if (keyboard.IsKeyDown(Keys.Up)) { camera.MoveBy(new Vector2(0f, 8f) * zoomFactor); }
         if (keyboard.IsKeyDown(Keys.Down)) { camera.MoveBy(new Vector2(0f, -8f) * zoomFactor); }
         if (keyboard.IsKeyClicked(Keys.R)) { camera.ResetZ(); camera.MoveBy(-camera.Position); }
-
+        
+        if (keyboard.IsKeyClicked(Keys.OemPlus)) { timeScale = Math.Clamp(timeScale * 2f, 0.25f, 4f); }
+        if (keyboard.IsKeyClicked(Keys.OemMinus)) { timeScale = Math.Clamp(timeScale / 2f, 0.25f, 4f); }
+        
         float dx = 0f;
         float dy = 0f;
-        float speed = 32f;
+        float forceMagnitude = 48f;
         
         if (keyboard.IsKeyDown(Keys.A)) { dx--; }
         if (keyboard.IsKeyDown(Keys.D)) { dx++; }
@@ -112,12 +118,14 @@ public class Game1 : Game
         }
         if (dx != 0 || dy != 0)
         {
-            MonoVector direction = new MonoVector(dx, dy).Normalize();
-            MonoVector velocity = direction * speed * (float)gameTime.ElapsedGameTime.TotalSeconds;
-            world.GetBody(0).MoveBy(velocity);
+            MonoVector forceDirection = new MonoVector(dx, dy).Normalize();
+            MonoVector force = forceDirection * forceMagnitude;
+            world.GetBody(0).AddForce(force);
         }
 
-        world.Step((float)gameTime.ElapsedGameTime.TotalSeconds);
+        world.Step((float)gameTime.ElapsedGameTime.TotalSeconds * timeScale);
+        
+        Util.WrapScreen(camera, world);
         
         base.Update(gameTime);
     }
@@ -127,12 +135,17 @@ public class Game1 : Game
         screen.Set();
         GraphicsDevice.Clear(Color.CornflowerBlue);
         
-        sprites.Begin(camera, false);
-        sprites.End();
-        
         shapes.Begin(camera);
         world.DrawShapes(shapes, world);
         shapes.End();
+
+        camera.GetScreenBounds(out float left, out float right, out float bottom, out float top);
+        float zoomFactor = (float)(camera.Z / camera.ZBase);
+        Vector2 topRight = new Vector2(left + 12f * zoomFactor, top - 30f * zoomFactor);
+        
+        sprites.Begin(camera, false);
+        sprites.DrawString($"Time Scale: {MathF.Round(timeScale, 2)}x", topRight, Color.DarkGreen, 1.2f * zoomFactor);
+        sprites.End();
         
         screen.Unset();
         screen.Present(sprites);

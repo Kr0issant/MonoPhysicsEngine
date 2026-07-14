@@ -100,4 +100,19 @@ public static class Util
             else Console.WriteLine($"[{i}] {msg}");
         }
     }
+
+    public static void WrapScreen(Camera camera, World world)
+    {
+        camera.GetScreenBounds(out float left, out float right, out float bottom, out float top);
+        
+        for (int i = 0; i < world.BodyCount; i++)
+        {
+            RigidBody body = world.GetBody(i);
+            
+            if (body.Position.X < left) body.MoveTo(new MonoVector(right, body.Position.Y));
+            if (body.Position.X > right) body.MoveTo(new MonoVector(left, body.Position.Y));
+            if (body.Position.Y < bottom) body.MoveTo(new MonoVector(body.Position.X, top));
+            if (body.Position.Y > top) body.MoveTo(new MonoVector(body.Position.X, bottom));
+        }
+    }
 }
