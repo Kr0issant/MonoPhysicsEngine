@@ -77,8 +77,8 @@ public class Game1 : Game
             string msg = null;
             bool success = false;
             
-            // int type = rng.Next(0, 2);
-            int type = (int)ShapeType.Box;
+            int type = rng.Next(0, 2);
+            // int type = (int)ShapeType.Circle;
             
             int x = rng.Next((int)(left + padding), (int)(right - padding));
             int y = rng.Next((int)(bottom + padding), (int)(top - padding));
@@ -167,20 +167,51 @@ public class Game1 : Game
         
         /* --- Collision Detection --- */
 
-        // for (int i = 0; i < bodies.Count; i++)
-        // {
-        //     RigidBody bodyA = bodies[i];
-        //     for (int j = i + 1; j < bodies.Count; j++)
-        //     {
-        //         RigidBody bodyB = bodies[j];
-        //
-        //         if (Collisions.CheckCircleCollision(bodyA.Position, bodyB.Position, bodyA.Radius, bodyB.Radius, out MonoVector normal, out float depth))
-        //         {
-        //             bodyA.MoveBy(normal * depth * (bodyB.Mass / (bodyA.Mass + bodyB.Mass)));
-        //             bodyB.MoveBy(-normal * depth * (bodyA.Mass / (bodyA.Mass + bodyB.Mass)));
-        //         }
-        //     }
-        // }
+        for (int i = 0; i < bodies.Count; i++)
+        {
+            RigidBody bodyA = bodies[i];
+            for (int j = i + 1; j < bodies.Count; j++)
+            {
+                RigidBody bodyB = bodies[j];
+                
+                ShapeType shapeA = bodyA.ShapeType;
+                ShapeType shapeB = bodyB.ShapeType;
+                
+                MonoVector normal = MonoVector.Zero;
+                float depth = 0f;
+                bool resolve = false;
+
+                if (shapeA == shapeB)
+                {
+                    if (shapeA == ShapeType.Circle)
+                    {
+                        resolve = Collisions.CheckCircleCollision(bodyA.Position, bodyB.Position, bodyA.Radius, bodyB.Radius, out normal, out depth);
+                    }
+                    else if (shapeA == ShapeType.Box)
+                    {
+                        resolve = Collisions.CheckPolygonCollision(bodyA.GetTransformedVertices(), bodyB.GetTransformedVertices(), out normal, out depth);
+                    }
+                }
+                else
+                {
+                    if (shapeA == ShapeType.Circle && shapeB == ShapeType.Box)
+                    {
+                        resolve = Collisions.CheckCirclePolygonCollision(bodyA.Position, bodyA.Radius, bodyB.GetTransformedVertices(), out normal, out depth);
+                    }
+                    else if (shapeA == ShapeType.Box && shapeB == ShapeType.Circle)
+                    {
+                        resolve = Collisions.CheckCirclePolygonCollision(bodyB.Position, bodyB.Radius, bodyA.GetTransformedVertices(), out normal, out depth);
+                        normal = -normal;
+                    }
+                }
+
+                if (resolve)
+                {
+                    bodyA.MoveBy(normal * depth * (bodyB.Mass / (bodyA.Mass + bodyB.Mass)));
+                    bodyB.MoveBy(-normal * depth * (bodyA.Mass / (bodyA.Mass + bodyB.Mass)));
+                }
+            }
+        }
         
         /* --- Collision Resolution --- */
         // for (int i = 0; i < bodies.Count; i++)
