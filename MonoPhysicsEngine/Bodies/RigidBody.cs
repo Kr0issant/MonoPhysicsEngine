@@ -14,6 +14,7 @@ public sealed class RigidBody
 {
     public readonly float Density;
     public readonly float Mass;
+    public readonly float InvMass;
     public readonly float Restitution;
     public readonly float Area;
     
@@ -50,6 +51,7 @@ public sealed class RigidBody
     {
         this.Density = density;
         this.Mass = mass;
+        this.InvMass = isStatic ? 0f : 1f / mass;
         this.Restitution = restitution;
         this.Area = area;
 

@@ -63,7 +63,7 @@ public static class Util
         return total / vertices.Length;
     }
 
-    public static void SpawnRandomBodies(World world, int count, Camera camera, Color default_border_color, float screenPadding = 20f, ShapeType? shapeType = null, float? area = null, float? density = null, Shapes.FillMode fillMode = Shapes.FillMode.Filled)
+    public static void SpawnRandomBodies(World world, int count, Camera camera, Color default_border_color, Color default_static_fill_color, Color default_static_border_color, float screenPadding = 20f, ShapeType? shapeType = null, float? area = null, float? density = null, Shapes.FillMode fillMode = Shapes.FillMode.Filled, bool isStatic = false)
     {
         Random rng = new Random();
         
@@ -82,12 +82,13 @@ public static class Util
             int x = rng.Next((int)(left + screenPadding), (int)(right - screenPadding));
             int y = rng.Next((int)(bottom + screenPadding), (int)(top - screenPadding));
             
-            Color color = new Color((float)rng.NextDouble(), (float)rng.NextDouble(), (float)rng.NextDouble());
+            Color _fillColor = isStatic ? default_static_fill_color : new Color((float)rng.NextDouble(), (float)rng.NextDouble(), (float)rng.NextDouble());
+            Color _borderColor = isStatic ? default_static_border_color : default_border_color;
             
             if (_shapeType == 0)
             {
                 float radius = MathF.Sqrt(_area / MathF.PI);
-                success = RigidBody.CreateCircleBody(new MonoVector(x, y), radius, _density, false, 1f, fillMode, color, default_border_color, out body, out msg);
+                success = RigidBody.CreateCircleBody(new MonoVector(x, y), radius, _density, isStatic, 1f, fillMode, _fillColor, _borderColor, out body, out msg);
             }
             else if (_shapeType == 1)
             {
@@ -95,7 +96,7 @@ public static class Util
                 float width = maxDimensions * (float)(rng.NextDouble() * 1.0 + 0.5);
                 float height = _area / width;
         
-                success = RigidBody.CreateBoxBody(new MonoVector(x, y), width, height, _density, false, 1f, fillMode, color, default_border_color, out body, out msg);
+                success = RigidBody.CreateBoxBody(new MonoVector(x, y), width, height, _density, isStatic, 1f, fillMode, _fillColor, _borderColor, out body, out msg);
             }
             
             if (success) { world.AddBody(body); }

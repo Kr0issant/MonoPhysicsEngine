@@ -51,7 +51,7 @@ public sealed class World
         /* --- Movement --- */
         for (int i = 0; i < bodies.Count; i++)
         {
-            // bodies[i].AddForce(gravity * bodies[i].Mass);
+            // if (!bodies[i].IsStatic) bodies[i].AddForce(gravity * bodies[i].Mass);
             bodies[i].Step(deltaTime);
         }
         
@@ -64,10 +64,12 @@ public sealed class World
             {
                 RigidBody bodyB = bodies[j];
 
+                if (bodyA.IsStatic && bodyB.IsStatic) continue;
+
                 if (Collisions.CheckGeneralCollision(bodyA, bodyB, out MonoVector normal, out float depth))
                 {
-                    bodyA.MoveBy(normal * depth * (bodyB.Mass / (bodyA.Mass + bodyB.Mass)));
-                    bodyB.MoveBy(-normal * depth * (bodyA.Mass / (bodyA.Mass + bodyB.Mass)));
+                    if (!bodyA.IsStatic) bodyA.MoveBy(normal * depth * (bodyB.Mass / (bodyA.Mass + bodyB.Mass)));
+                    if (!bodyB.IsStatic) bodyB.MoveBy(-normal * depth * (bodyA.Mass / (bodyA.Mass + bodyB.Mass)));
                     Collisions.ResolveCollision(bodyA, bodyB, normal, depth);
                 }
             }

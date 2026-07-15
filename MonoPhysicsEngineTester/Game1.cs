@@ -30,7 +30,11 @@ public class Game1 : Game
 
     private const int DEFAULT_ZOOM = 4;
 
+    private Color BACKGROUND_COLOR = Color.CornflowerBlue;
     private Color SHAPE_BORDER_COLOR = Color.Black;
+    private Color SHAPE_STATIC_BORDER_COLOR = Color.LightGray;
+    // private Color SHAPE_FILL_COLOR = Color.White;
+    private Color SHAPE_STATIC_FILL_COLOR = new Color(80, 80, 80);
 
     private World world;
     private float timeScale;
@@ -60,7 +64,14 @@ public class Game1 : Game
         camera.Zoom = DEFAULT_ZOOM;
 
         world = new World();
-        Util.SpawnRandomBodies(world, 20, camera, SHAPE_BORDER_COLOR, area: 15f * 15f);
+        Util.SpawnRandomBodies(world, 20, camera, SHAPE_BORDER_COLOR, SHAPE_STATIC_FILL_COLOR, SHAPE_STATIC_BORDER_COLOR, area: 15f * 15f);
+        Util.SpawnRandomBodies(world, 4, camera, SHAPE_BORDER_COLOR, SHAPE_STATIC_FILL_COLOR, SHAPE_STATIC_BORDER_COLOR, area: 15f * 15f, isStatic:true);
+        
+        // camera.GetScreenBounds(out float width, out float height);
+        // if (RigidBody.CreateBoxBody(new MonoVector(0, -height / 3f), width, 2f, 1f, true, 1f, Shapes.FillMode.Filled, SHAPE_STATIC_FILL_COLOR, SHAPE_STATIC_BORDER_COLOR,  out RigidBody body, out string msg))
+        // {
+        //     world.AddBody(body);
+        // }
         
         timeScale = 1.0f;
         
@@ -133,7 +144,7 @@ public class Game1 : Game
     protected override void Draw(GameTime gameTime)
     {
         screen.Set();
-        GraphicsDevice.Clear(Color.CornflowerBlue);
+        GraphicsDevice.Clear(BACKGROUND_COLOR);
         
         shapes.Begin(camera);
         world.DrawShapes(shapes, world);
