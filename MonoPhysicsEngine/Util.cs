@@ -63,7 +63,7 @@ public static class Util
         return total / vertices.Length;
     }
 
-    public static void SpawnRandomBodies(World world, int count, Camera camera, Color default_border_color, Color default_static_fill_color, Color default_static_border_color, float screenPadding = 20f, ShapeType? shapeType = null, float? area = null, float? density = null, Shapes.FillMode fillMode = Shapes.FillMode.Filled, bool isStatic = false)
+    public static void SpawnRandomBodies(World world, int count, Camera camera, Color defaultBorderColor, Color defaultStaticFillColor, Color defaultStaticBorderColor, float screenPadding = 20f, ShapeType? shapeType = null, float? area = null, float? density = null, float? restitution = null, Shapes.FillMode fillMode = Shapes.FillMode.Filled, bool isStatic = false)
     {
         Random rng = new Random();
         
@@ -71,37 +71,47 @@ public static class Util
         
         for (int i = 0; i < count; i++)
         {
-            RigidBody body = null;
-            string msg = null;
-            bool success = false;
-            
-            int _shapeType = (shapeType is null) ? rng.Next(0, Enum.GetNames(typeof(ShapeType)).Length) : (int)shapeType;
-            float _area = (area is null) ? GetBiasedRandom(World.MinBodySize, World.MaxBodySize, 100f, 0.5f) : (float)area;
-            float _density = (density is null) ? GetBiasedRandom(World.MinDensity, World.MaxDensity, 3f, 0.75f) : (float)density;
-            
             int x = rng.Next((int)(left + screenPadding), (int)(right - screenPadding));
             int y = rng.Next((int)(bottom + screenPadding), (int)(top - screenPadding));
-            
-            Color _fillColor = isStatic ? default_static_fill_color : new Color((float)rng.NextDouble(), (float)rng.NextDouble(), (float)rng.NextDouble());
-            Color _borderColor = isStatic ? default_static_border_color : default_border_color;
-            
-            if (_shapeType == 0)
-            {
-                float radius = MathF.Sqrt(_area / MathF.PI);
-                success = RigidBody.CreateCircleBody(new MonoVector(x, y), radius, _density, isStatic, 1f, fillMode, _fillColor, _borderColor, out body, out msg);
-            }
-            else if (_shapeType == 1)
-            {
-                float maxDimensions = MathF.Sqrt(_area);
-                float width = maxDimensions * (float)(rng.NextDouble() * 1.0 + 0.5);
-                float height = _area / width;
-        
-                success = RigidBody.CreateBoxBody(new MonoVector(x, y), width, height, _density, isStatic, 1f, fillMode, _fillColor, _borderColor, out body, out msg);
-            }
-            
-            if (success) { world.AddBody(body); }
-            else Console.WriteLine($"[{i}] {msg}");
+
+            bool success = SpawnRandomBodyAt(world, new MonoVector(x, y), defaultBorderColor, defaultStaticFillColor, defaultStaticBorderColor, out string msg, shapeType: shapeType, area: area, density: density, restitution: restitution, isStatic: isStatic, fillMode: fillMode);
+            if (!success) Console.WriteLine($"[{i}] {msg}");
         }
+    }
+
+    public static bool SpawnRandomBodyAt(World world, MonoVector position, Color defaultBorderColor, Color defaultStaticFillColor, Color defaultStaticBorderColor, out string msg, ShapeType? shapeType = null, Color? fillColor = null, float? area = null, float? density = null, float? restitution = null, Shapes.FillMode fillMode = Shapes.FillMode.Filled, bool isStatic = false)
+    {
+        bool success = false;
+        msg = "";
+        RigidBody body = null;
+        
+        float _restitution = (restitution is null) ? GetBiasedRandom(0f, 1f, 0.5f, 0.6f) : restitution.Value;
+        int _shapeType = (shapeType is null) ? rng.Next(0, Enum.GetNames(typeof(ShapeType)).Length) : (int)shapeType;
+        float _area = (area is null) ? GetBiasedRandom(World.MinBodySize, World.MaxBodySize, 100f, 0.5f) : area.Value;
+        float _density = (density is null) ? GetBiasedRandom(World.MinDensity, World.MaxDensity, 3f, 0.75f) : density.Value;
+
+        Color _fillColor;
+        if (fillColor is not null) _fillColor = fillColor.Value;
+        else _fillColor = isStatic ? defaultStaticFillColor : new Color((float)rng.NextDouble(), (float)rng.NextDouble(), (float)rng.NextDouble());
+        Color _borderColor = isStatic ? defaultStaticBorderColor : defaultBorderColor;
+            
+        if (_shapeType == 0)
+        {
+            float radius = MathF.Sqrt(_area / MathF.PI);
+            success = RigidBody.CreateCircleBody(new MonoVector(position.X, position.Y), radius, _density, isStatic, _restitution, fillMode, _fillColor, _borderColor, out body, out msg);
+        }
+        else if (_shapeType == 1)
+        {
+            float maxDimensions = MathF.Sqrt(_area);
+            float width = maxDimensions * (float)(rng.NextDouble() * 1.0 + 0.5);
+            float height = _area / width;
+        
+            success = RigidBody.CreateBoxBody(new MonoVector(position.X, position.Y), width, height, _density, isStatic, _restitution, fillMode, _fillColor, _borderColor, out body, out msg);
+        }
+            
+        if (success) { world.AddBody(body); }
+
+        return success;
     }
 
     public static void WrapScreen(Camera camera, World world)

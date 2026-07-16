@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -11,6 +9,7 @@ using MonoUtils.Utility;
 using MonoPhysicsEngine;
 using MonoPhysicsEngine.Content;
 using Util = MonoPhysicsEngine.Util;
+using MonoGame.ImGui.Standard;
 
 namespace MonoPhysicsEngineTester;
 
@@ -25,6 +24,8 @@ public class Game1 : Game
     private UtilsKeyboard keyboard = new  UtilsKeyboard();
     private UtilsMouse mouse =  new  UtilsMouse();
     
+    private TesterGUI testerGui;
+    
     private const int SCREEN_WIDTH = 1280;
     private const int SCREEN_HEIGHT = 720;
 
@@ -35,9 +36,10 @@ public class Game1 : Game
     private Color SHAPE_STATIC_BORDER_COLOR = Color.LightGray;
     // private Color SHAPE_FILL_COLOR = Color.White;
     private Color SHAPE_STATIC_FILL_COLOR = new Color(80, 80, 80);
-
+    
     private World world;
     private float timeScale;
+    private bool isPaused;
 
     public Game1()
     {
@@ -62,18 +64,23 @@ public class Game1 : Game
         camera = new Camera(screen);
 
         camera.Zoom = DEFAULT_ZOOM;
+        camera.GetScreenBounds(out float width, out float height);
 
         world = new World();
-        Util.SpawnRandomBodies(world, 20, camera, SHAPE_BORDER_COLOR, SHAPE_STATIC_FILL_COLOR, SHAPE_STATIC_BORDER_COLOR, area: 15f * 15f);
-        Util.SpawnRandomBodies(world, 4, camera, SHAPE_BORDER_COLOR, SHAPE_STATIC_FILL_COLOR, SHAPE_STATIC_BORDER_COLOR, area: 15f * 15f, isStatic:true);
+        Util.SpawnRandomBodies(world, 5, camera, SHAPE_BORDER_COLOR, SHAPE_STATIC_FILL_COLOR, SHAPE_STATIC_BORDER_COLOR, area: 15f * 15f);
+        // Util.SpawnRandomBodies(world, 4, camera, SHAPE_BORDER_COLOR, SHAPE_STATIC_FILL_COLOR, SHAPE_STATIC_BORDER_COLOR, area: 15f * 15f, isStatic:true);
         
-        // camera.GetScreenBounds(out float width, out float height);
-        // if (RigidBody.CreateBoxBody(new MonoVector(0, -height / 3f), width, 2f, 1f, true, 1f, Shapes.FillMode.Filled, SHAPE_STATIC_FILL_COLOR, SHAPE_STATIC_BORDER_COLOR,  out RigidBody body, out string msg))
-        // {
-        //     world.AddBody(body);
-        // }
+        float padding = width * 0.1f;
+        if (RigidBody.CreateBoxBody(new MonoVector(0, -height / 3f), width - padding, 5f, 1f, true, 1f, Shapes.FillMode.Filled, SHAPE_STATIC_FILL_COLOR, SHAPE_STATIC_BORDER_COLOR,  out RigidBody body, out string msg))
+        {
+            world.AddBody(body);
+        }
         
         timeScale = 1.0f;
+        isPaused = false;
+
+        // testerGui = new TesterGUI(world, camera, SHAPE_STATIC_FILL_COLOR, SHAPE_BORDER_COLOR, SHAPE_STATIC_BORDER_COLOR);
+        // testerGui.Initialize(this);
         
         base.Initialize();
     }
@@ -90,6 +97,8 @@ public class Game1 : Game
         
         keyboard.Update();
         mouse.Update();
+
+        // bool mouseOnGui = ImGuiNET.ImGui.GetIO().WantCaptureMouse;
         
         float zoomFactor = (float)(camera.Z / camera.ZBase);
         
@@ -108,33 +117,35 @@ public class Game1 : Game
         
         if (keyboard.IsKeyClicked(Keys.OemPlus)) { timeScale = Math.Clamp(timeScale * 2f, 0.25f, 4f); }
         if (keyboard.IsKeyClicked(Keys.OemMinus)) { timeScale = Math.Clamp(timeScale / 2f, 0.25f, 4f); }
-        
-        float dx = 0f;
-        float dy = 0f;
-        float forceMagnitude = 100f;
-        
-        if (keyboard.IsKeyDown(Keys.A)) { dx--; }
-        if (keyboard.IsKeyDown(Keys.D)) { dx++; }
-        if (keyboard.IsKeyDown(Keys.W)) { dy++; }
-        if (keyboard.IsKeyDown(Keys.S)) { dy--; }
-        
-        if (mouse.IsLeftButtonDown())
-        {
-            Vector2 diff = mouse.GetScreenPosition(screen, camera) - world.GetBody(0).Position.ToVector2();
-            if (diff.Length() > new Vector2(0.1f, 0.1f).Length())
-            {
-                dx = diff.X;
-                dy = diff.Y;
-            }
-        }
-        if (dx != 0 || dy != 0)
-        {
-            MonoVector forceDirection = new MonoVector(dx, dy).Normalize();
-            MonoVector force = forceDirection * forceMagnitude * world.GetBody(0).Mass;
-            world.GetBody(0).AddForce(force);
-        }
 
-        world.Step((float)gameTime.ElapsedGameTime.TotalSeconds * timeScale);
+        MonoVector mousePos = MonoVector.FromVector2(mouse.GetScreenPosition(screen, camera));
+        
+        if (mouse.IsLeftButtonClicked())
+        {
+            Util.SpawnRandomBodyAt(world, mousePos, SHAPE_BORDER_COLOR, SHAPE_STATIC_FILL_COLOR, SHAPE_STATIC_BORDER_COLOR, out string msg, isStatic: false, area: 15f * 15f, shapeType: ShapeType.Circle);
+        }
+        if (mouse.IsRightButtonClicked())
+        {
+            Util.SpawnRandomBodyAt(world, mousePos, SHAPE_BORDER_COLOR, SHAPE_STATIC_FILL_COLOR, SHAPE_STATIC_BORDER_COLOR, out string msg, isStatic: false, area: 15f * 15f, shapeType: ShapeType.Box);
+        }
+        
+        // float dx = 0f;
+        // float dy = 0f;
+        // float forceMagnitude = 100f;
+        //
+        // if (keyboard.IsKeyDown(Keys.A)) { dx--; }
+        // if (keyboard.IsKeyDown(Keys.D)) { dx++; }
+        // if (keyboard.IsKeyDown(Keys.W)) { dy++; }
+        // if (keyboard.IsKeyDown(Keys.S)) { dy--; }
+        //
+        // if (dx != 0 || dy != 0)
+        // {
+        //     MonoVector forceDirection = new MonoVector(dx, dy).Normalize();
+        //     MonoVector force = forceDirection * forceMagnitude * world.GetBody(0).Mass;
+        //     world.GetBody(0).AddForce(force);
+        // }
+
+        if (!isPaused) world.Step((float)gameTime.ElapsedGameTime.TotalSeconds * timeScale);
         
         Util.WrapScreen(camera, world);
         
@@ -157,6 +168,8 @@ public class Game1 : Game
         sprites.Begin(camera, false);
         sprites.DrawString($"Time Scale: {MathF.Round(timeScale, 2)}x", topRight, Color.DarkGreen, 1.2f * zoomFactor);
         sprites.End();
+        
+        // testerGui.Draw(gameTime);
         
         screen.Unset();
         screen.Present(sprites);

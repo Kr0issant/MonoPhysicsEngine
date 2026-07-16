@@ -17,22 +17,22 @@ public static class Collisions
         {
             if (shapeA == ShapeType.Circle)
             {
-                return CheckCircleCollision(bodyA.Position, bodyB.Position, bodyA.Radius, bodyB.Radius, out normal, out depth);
+                return CheckCircleCollision(bodyA.Position, bodyA.Radius, bodyB.Position, bodyB.Radius, out normal, out depth);
             }
             if (shapeA == ShapeType.Box)
             {
-                return CheckPolygonCollision(bodyA.GetTransformedVertices(), bodyB.GetTransformedVertices(), out normal, out depth);
+                return CheckPolygonCollision(bodyA.Position, bodyA.GetTransformedVertices(), bodyB.Position, bodyB.GetTransformedVertices(), out normal, out depth);
             }
         }
         else
         {
             if (shapeA == ShapeType.Circle && shapeB == ShapeType.Box)
             {
-                return CheckCirclePolygonCollision(bodyA.Position, bodyA.Radius, bodyB.GetTransformedVertices(), out normal, out depth);
+                return CheckCirclePolygonCollision(bodyA.Position, bodyA.Radius, bodyB.Position, bodyB.GetTransformedVertices(), out normal, out depth);
             }
             if (shapeA == ShapeType.Box && shapeB == ShapeType.Circle)
             {
-                bool result = CheckCirclePolygonCollision(bodyB.Position, bodyB.Radius, bodyA.GetTransformedVertices(), out normal, out depth);
+                bool result = CheckCirclePolygonCollision(bodyB.Position, bodyB.Radius, bodyA.Position, bodyA.GetTransformedVertices(), out normal, out depth);
                 normal = -normal;
                 return result;
             }
@@ -41,7 +41,7 @@ public static class Collisions
         return false;
     }
     
-    public static bool CheckCircleCollision(MonoVector centerA, MonoVector centerB, float radiusA, float radiusB, out MonoVector normal, out float depth)
+    public static bool CheckCircleCollision(MonoVector centerA, float radiusA, MonoVector centerB, float radiusB, out MonoVector normal, out float depth)
     {
         normal = MonoVector.Zero;
         depth = 0f;
@@ -87,6 +87,41 @@ public static class Collisions
 
         MonoVector centerA = Util.GetPolygonCenter(verticesA);
         MonoVector centerB = Util.GetPolygonCenter(verticesB);
+        if (MonoVector.Dot(normal, centerA - centerB) < 0) { normal = -normal; }
+        
+        return true;
+    }
+    
+    public static bool CheckPolygonCollision(MonoVector centerA, MonoVector[] verticesA, MonoVector centerB, MonoVector[] verticesB, out MonoVector normal, out float depth)
+    {
+        normal = MonoVector.Zero;
+        depth = float.MaxValue;
+
+        int totalEdges = verticesA.Length + verticesB.Length;
+        for (int i = 0; i < totalEdges; i++)
+        {
+            MonoVector[] currentShape = i < verticesA.Length ? verticesA : verticesB;
+            int index = i < verticesA.Length ? i : i - verticesA.Length;
+            
+            MonoVector va1 = currentShape[index];
+            MonoVector va2 = currentShape[(index + 1) % currentShape.Length];
+
+            MonoVector edge = va2 - va1;
+            MonoVector axis = new MonoVector(-edge.Y, edge.X).Normalize();
+            
+            Util.ProjectVerticesOnAxis(verticesA, axis, out float minA, out float maxA);
+            Util.ProjectVerticesOnAxis(verticesB, axis, out float minB, out float maxB);
+            
+            if (minA >= maxB || minB >= maxA) return false;
+
+            float axisDepth = MathF.Min(maxA, maxB) - MathF.Max(minA, minB);
+            if (axisDepth < depth)
+            {
+                depth = axisDepth;
+                normal = axis;
+            }
+        }
+        
         if (MonoVector.Dot(normal, centerA - centerB) < 0) { normal = -normal; }
         
         return true;
@@ -148,6 +183,66 @@ public static class Collisions
         }
 
         MonoVector centerB = Util.GetPolygonCenter(verticesB);
+        if (MonoVector.Dot(normal, centerA - centerB) < 0) { normal = -normal; }
+
+        return true;
+    }
+    
+    public static bool CheckCirclePolygonCollision(MonoVector centerA, float radiusA, MonoVector centerB, MonoVector[] verticesB, out MonoVector normal, out float depth)
+    {
+        normal = MonoVector.Zero;
+        depth = float.MaxValue;
+
+        MonoVector closestVertex = verticesB[0];
+        float minDistance = (closestVertex - centerA).LengthSquared;
+        float distance;
+
+        for (int i = 0; i < verticesB.Length; i++)
+        {
+            MonoVector va1 = verticesB[i];
+            MonoVector va2 = verticesB[(i + 1) % verticesB.Length];
+
+            distance = (va1 - centerA).LengthSquared;
+            if (distance < minDistance)
+            {
+                closestVertex = va1;
+                minDistance = distance;
+            }
+
+            MonoVector edge = va2 - va1;
+            MonoVector axis = new MonoVector(-edge.Y, edge.X).Normalize();
+            
+            Util.ProjectCircleOnAxis(centerA, radiusA, axis, out float minA, out float maxA);
+            Util.ProjectVerticesOnAxis(verticesB, axis, out float minB, out float maxB);
+            
+            if (minA >= maxB || minB >= maxA) return false;
+
+            float axisDepth = MathF.Min(maxA, maxB) - MathF.Max(minA, minB);
+            if (axisDepth < depth)
+            {
+                depth = axisDepth;
+                normal = axis;
+            }
+        }
+
+        MonoVector cornerAxis = centerA - closestVertex;
+        if (cornerAxis.LengthSquared > 0.01f)
+        {
+            cornerAxis = cornerAxis.Normalize();
+
+            Util.ProjectCircleOnAxis(centerA, radiusA, cornerAxis, out float minA, out float maxA);
+            Util.ProjectVerticesOnAxis(verticesB, cornerAxis, out float minB, out float maxB);
+
+            if (minA >= maxB || minB >= maxA) return false;
+
+            float axisDepth = MathF.Min(maxA, maxB) - MathF.Max(minA, minB);
+            if (axisDepth < depth)
+            {
+                depth = axisDepth;
+                normal = cornerAxis;
+            }
+        }
+
         if (MonoVector.Dot(normal, centerA - centerB) < 0) { normal = -normal; }
 
         return true;

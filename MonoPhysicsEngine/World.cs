@@ -25,7 +25,7 @@ public sealed class World
 
     public World()
     {
-        gravity = new MonoVector(0, -9.81f);
+        gravity = new MonoVector(0, -981f);
 
         bodies = new List<RigidBody>();
     }
@@ -51,7 +51,7 @@ public sealed class World
         /* --- Movement --- */
         for (int i = 0; i < bodies.Count; i++)
         {
-            // if (!bodies[i].IsStatic) bodies[i].AddForce(gravity * bodies[i].Mass);
+            if (!bodies[i].IsStatic) bodies[i].AddForce(gravity * bodies[i].Mass);
             bodies[i].Step(deltaTime);
         }
         
