@@ -32,20 +32,19 @@ public sealed class RigidBody
 
     private MonoVector[] vertices;
     private MonoVector[] transformedVertices;
-    private bool transformUpdateRequired;
+    private MonoAABB aabb;
     public int[] Triangles;
-
-    private Shapes.FillMode fillMode;
-    private Color fillColor;
-    private Color borderColor;
     
+    private bool transformUpdateRequired;
+    private bool aabbUpdateRequired;
+
     public MonoVector Position => position;
     public MonoVector LinearVelocity { get; internal set; }
     public float AngularVelocity => angularVelocity;
     public float Rotation => rotation;
-    public Shapes.FillMode FillMode => fillMode;
-    public Color FillColor => fillColor;
-    public Color BorderColor => borderColor;
+    public Shapes.FillMode FillMode { get; set; }
+    public Color FillColor { get; set; }
+    public Color BorderColor { get; set; }
 
     private RigidBody(MonoVector position, float density, float mass, float restitution, float area, bool isStatic, ShapeType shapeType, float radius, float width, float height, Shapes.FillMode fillMode, Color fillColor, Color borderColor)
     {
@@ -55,9 +54,9 @@ public sealed class RigidBody
         this.Restitution = restitution;
         this.Area = area;
 
-        this.fillMode = fillMode;
-        this.fillColor = fillColor;
-        this.borderColor = borderColor;
+        this.FillMode = fillMode;
+        this.FillColor = fillColor;
+        this.BorderColor = borderColor;
         
         this.IsStatic = isStatic;
         this.ShapeType = shapeType;
@@ -76,27 +75,31 @@ public sealed class RigidBody
         {
             vertices = CreateBoxVertices(width, height);
             Triangles = CreateBoxTriangles();
-            transformedVertices = new  MonoVector[vertices.Length];
+            transformedVertices = new MonoVector[vertices.Length];
         }
         transformUpdateRequired = true;
+        aabbUpdateRequired = true;
     }
 
     public void MoveBy(MonoVector amount)
     {
         position += amount;
         transformUpdateRequired = true;
+        aabbUpdateRequired = true;
     }
 
     public void MoveTo(MonoVector position)
     {
         this.position = position;
         transformUpdateRequired = true;
+        aabbUpdateRequired = true;
     }
 
     public void Rotate(float amount)
     {
         rotation += amount;
         transformUpdateRequired = true;
+        aabbUpdateRequired = true;
     }
 
     public void AddForce(MonoVector amount)
@@ -106,19 +109,68 @@ public sealed class RigidBody
 
     public void Step(float deltaTime)
     {
-        LinearVelocity += (force / Mass) * deltaTime;
-        force = MonoVector.Zero;
-        
+        if (IsStatic)
+        {
+            force = MonoVector.Zero;
+            return;
+        }
+
+        MonoVector acceleration = force * InvMass;
+        MonoVector deltaVelocity = acceleration * deltaTime;
+
+        if (deltaVelocity == MonoVector.Zero && LinearVelocity == MonoVector.Zero && angularVelocity == 0f)
+        {
+            force = MonoVector.Zero;
+            return;
+        }
+
+        LinearVelocity += deltaVelocity;
         position += LinearVelocity * deltaTime;
         rotation += angularVelocity * deltaTime;
+
+        force = MonoVector.Zero;
         
         transformUpdateRequired = true;
+        aabbUpdateRequired = true;
     }
 
-    public void UpdateFillMode(Shapes.FillMode fillMode) { this.fillMode = fillMode; }
-    public void UpdateFillColor(Color fillColor) { this.fillColor = fillColor; }
-    public void UpdateBorderColor(Color borderColor) { this.borderColor = borderColor; }
+    public MonoAABB GetAABB()
+    {
+        if (aabbUpdateRequired)
+        {
+            float minX = float.MaxValue;
+            float minY = float.MaxValue;
+            float maxX = float.MinValue;
+            float maxY = float.MinValue;
+            
+            if (ShapeType == ShapeType.Circle)
+            {
+                minX = position.X - Radius;
+                minY = position.Y - Radius;
+                maxX = position.X + Radius;
+                maxY = position.Y + Radius;
+            }
+            else if (ShapeType == ShapeType.Box)
+            {
+                GetTransformedVertices();
 
+                foreach (MonoVector v in transformedVertices)
+                {
+                    if (v.X < minX) minX = v.X;
+                    if (v.X > maxX) maxX = v.X;
+                    if (v.Y < minY) minY = v.Y;
+                    if (v.Y > maxY) maxY = v.Y;
+                }
+            }
+            else { throw new Exception("Shape type not supported"); }
+            
+            aabb = new MonoAABB(minX, minY, maxX, maxY);
+            aabbUpdateRequired = false;
+        }
+
+        return aabb;
+    }
+    
     /* --- Creation --- */
     public static bool CreateCircleBody(MonoVector position, float radius, float density, bool isStatic, float restitution, Shapes.FillMode fillMode, Color fillColor, Color borderColor, out RigidBody body, out string errorMessage)
     {

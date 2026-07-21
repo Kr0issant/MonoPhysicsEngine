@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -36,10 +37,18 @@ public class Game1 : Game
     private Color SHAPE_STATIC_BORDER_COLOR = Color.LightGray;
     // private Color SHAPE_FILL_COLOR = Color.White;
     private Color SHAPE_STATIC_FILL_COLOR = new Color(80, 80, 80);
+
+    private bool RENDER_AABBs = true;
+    private bool FPS_CAP_60 = true;
     
     private World world;
     private float timeScale;
     private bool isPaused;
+    
+    private FrameCounter frameCounter;
+    private FrameCounter tickCounter;
+    
+    private Stopwatch watch;
 
     public Game1()
     {
@@ -52,11 +61,19 @@ public class Game1 : Game
 
     protected override void Initialize()
     {
+        if (!FPS_CAP_60)
+        {
+            IsFixedTimeStep = false;
+            graphics.SynchronizeWithVerticalRetrace = false;
+        }
         graphics.PreferredBackBufferWidth = SCREEN_WIDTH;
         graphics.PreferredBackBufferHeight = SCREEN_HEIGHT;
         graphics.ApplyChanges();
         
         Window.AllowUserResizing = true;
+        
+        frameCounter = new FrameCounter();
+        tickCounter = new FrameCounter();
         
         shapes = new Shapes(this);
         sprites = new Sprites(this);
@@ -71,7 +88,7 @@ public class Game1 : Game
         // Util.SpawnRandomBodies(world, 4, camera, SHAPE_BORDER_COLOR, SHAPE_STATIC_FILL_COLOR, SHAPE_STATIC_BORDER_COLOR, area: 15f * 15f, isStatic:true);
         
         float padding = width * 0.1f;
-        if (RigidBody.CreateBoxBody(new MonoVector(0, -height / 3f), width - padding, 5f, 1f, true, 1f, Shapes.FillMode.Filled, SHAPE_STATIC_FILL_COLOR, SHAPE_STATIC_BORDER_COLOR,  out RigidBody body, out string msg))
+        if (RigidBody.CreateBoxBody(new MonoVector(0, -height / 3f), width - padding, 8f, 1f, true, 1f, Shapes.FillMode.Filled, SHAPE_STATIC_FILL_COLOR, SHAPE_STATIC_BORDER_COLOR,  out RigidBody body, out string msg))
         {
             world.AddBody(body);
         }
@@ -81,6 +98,8 @@ public class Game1 : Game
 
         // testerGui = new TesterGUI(world, camera, SHAPE_STATIC_FILL_COLOR, SHAPE_BORDER_COLOR, SHAPE_STATIC_BORDER_COLOR);
         // testerGui.Initialize(this);
+        
+        watch = new Stopwatch();
         
         base.Initialize();
     }
@@ -94,6 +113,7 @@ public class Game1 : Game
     protected override void Update(GameTime gameTime)
     {
         /* --- Input Handling --- */
+        tickCounter.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
         
         keyboard.Update();
         mouse.Update();
@@ -118,6 +138,12 @@ public class Game1 : Game
         if (keyboard.IsKeyClicked(Keys.OemPlus)) { timeScale = Math.Clamp(timeScale * 2f, 0.25f, 4f); }
         if (keyboard.IsKeyClicked(Keys.OemMinus)) { timeScale = Math.Clamp(timeScale / 2f, 0.25f, 4f); }
 
+        if (keyboard.IsKeyClicked(Keys.OemTilde))
+        {
+            Console.WriteLine($"{world.BodyCount} bodies");
+            Console.WriteLine($"tick time: {Math.Round(watch.Elapsed.TotalMilliseconds, 4)} ms");
+        }
+        
         MonoVector mousePos = MonoVector.FromVector2(mouse.GetScreenPosition(screen, camera));
         
         if (mouse.IsLeftButtonClicked())
@@ -145,9 +171,20 @@ public class Game1 : Game
         //     world.GetBody(0).AddForce(force);
         // }
 
+        watch.Restart();
         if (!isPaused) world.Step((float)gameTime.ElapsedGameTime.TotalSeconds * timeScale);
+        watch.Stop();
         
-        Util.WrapScreen(camera, world);
+        // Util.WrapScreen(camera, world);
+
+        camera.GetScreenBounds(out _, out _, out float bottom, out _);
+        for (int i = world.BodyCount - 1; i >= 0; i--)
+        {
+            RigidBody body = world.GetBody(i);
+            MonoAABB box = body.GetAABB();
+
+            if (box.Max.Y < bottom) { world.RemoveBody(body); }
+        }
         
         base.Update(gameTime);
     }
@@ -157,16 +194,22 @@ public class Game1 : Game
         screen.Set();
         GraphicsDevice.Clear(BACKGROUND_COLOR);
         
+        frameCounter.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
+        
         shapes.Begin(camera);
-        world.DrawShapes(shapes, world);
+        world.DrawShapes(shapes, world, RENDER_AABBs);
         shapes.End();
 
         camera.GetScreenBounds(out float left, out float right, out float bottom, out float top);
         float zoomFactor = (float)(camera.Z / camera.ZBase);
         Vector2 topRight = new Vector2(left + 12f * zoomFactor, top - 30f * zoomFactor);
+        Vector2 topRight2 = new Vector2(left + 12f * zoomFactor, top - 50f * zoomFactor);
+        Vector2 topRight3 = new Vector2(left + 12f * zoomFactor, top - 70f * zoomFactor);
         
         sprites.Begin(camera, false);
         sprites.DrawString($"Time Scale: {MathF.Round(timeScale, 2)}x", topRight, Color.DarkGreen, 1.2f * zoomFactor);
+        sprites.DrawString($"FPS: {MathF.Round(frameCounter.CurrentFramesPerSecond, 2)}", topRight2, Color.DarkGreen, 1.2f * zoomFactor);
+        sprites.DrawString($"TPS: {MathF.Round(tickCounter.CurrentFramesPerSecond, 2)}", topRight3, Color.DarkGreen, 1.2f * zoomFactor);
         sprites.End();
         
         // testerGui.Draw(gameTime);
