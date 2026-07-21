@@ -111,9 +111,9 @@ public sealed class World
             {
                 MonoManifold contact = contacts[i];
                 Collisions.ResolveCollision(in contact);
-                
-                if (contact.ContactCount > 0) ContactPoints.Add(contact.Contact1);
-                if (contact.ContactCount > 1) ContactPoints.Add(contact.Contact2);
+
+                if (contact.ContactCount > 0 && !ContactPoints.Contains(contact.Contact1)) ContactPoints.Add(contact.Contact1);
+                if (contact.ContactCount > 1 && !ContactPoints.Contains(contact.Contact2)) ContactPoints.Add(contact.Contact2);
                 
                 contacts.RemoveAt(i);
             }
@@ -152,6 +152,7 @@ public sealed class World
             foreach (MonoVector cp in ContactPoints)
             {
                 shapes.DrawCircle(cp.ToVector2(), 2f, Color.Red);
+                shapes.DrawCircle(cp.ToVector2(), 2f, Color.White, Shapes.FillMode.Border);
             }
         }
     }

@@ -8,6 +8,16 @@ namespace MonoPhysicsEngine;
 public static class Util
 {
     private static Random rng = new Random();
+
+    public static bool IsNearlyEqual(float a, float b, float epsilon = 0.05f)
+    {
+        return Math.Abs(a - b) < epsilon;
+    }
+
+    public static bool IsNearlyEqual(MonoVector a, MonoVector b, float epsilon = 0.05f)
+    {
+        return IsNearlyEqual(a.X, b.X, epsilon) && IsNearlyEqual(a.Y, b.Y, epsilon);
+    }
     
     public static void ToVector2Array(MonoVector[] src, ref Vector2[] dst)
     {
@@ -51,6 +61,21 @@ public static class Util
         {
             (min, max) = (max, min);
         }
+    }
+
+    public static void GetPointSegmentDistance(MonoVector p, MonoVector a, MonoVector b, out float distanceSquared, out MonoVector contactPoint)
+    {
+        MonoVector ab = b - a;
+        MonoVector ap = p - a;
+        
+        float projection = MonoVector.Dot(ap, ab);
+        float distance = projection / ab.LengthSquared;
+
+        if (distance <= 0f) contactPoint = a;
+        else if (distance >= 1f) contactPoint = b;
+        else contactPoint = a + ab * distance;
+        
+        distanceSquared = MonoVector.DistanceSquaredBetween(p, contactPoint);
     }
     
     public static MonoVector GetPolygonCenter(MonoVector[] vertices)

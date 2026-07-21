@@ -99,21 +99,21 @@ public static class Collisions
         return true;
     }
 
-    private static bool CheckCirclePolygonCollision(MonoVector centerA, float radiusA, MonoVector centerB, MonoVector[] verticesB, out MonoVector normal, out float depth)
+    private static bool CheckCirclePolygonCollision(MonoVector circleCenter, float circleRadius, MonoVector polygonCenter, MonoVector[] polygonVertices, out MonoVector normal, out float depth)
     {
         normal = MonoVector.Zero;
         depth = float.MaxValue;
 
-        MonoVector closestVertex = verticesB[0];
-        float minDistance = (closestVertex - centerA).LengthSquared;
+        MonoVector closestVertex = polygonVertices[0];
+        float minDistance = (closestVertex - circleCenter).LengthSquared;
         float distance;
 
-        for (int i = 0; i < verticesB.Length; i++)
+        for (int i = 0; i < polygonVertices.Length; i++)
         {
-            MonoVector va1 = verticesB[i];
-            MonoVector va2 = verticesB[(i + 1) % verticesB.Length];
+            MonoVector va1 = polygonVertices[i];
+            MonoVector va2 = polygonVertices[(i + 1) % polygonVertices.Length];
 
-            distance = (va1 - centerA).LengthSquared;
+            distance = (va1 - circleCenter).LengthSquared;
             if (distance < minDistance)
             {
                 closestVertex = va1;
@@ -123,8 +123,8 @@ public static class Collisions
             MonoVector edge = va2 - va1;
             MonoVector axis = new MonoVector(-edge.Y, edge.X).Normalize();
             
-            Util.ProjectCircleOnAxis(centerA, radiusA, axis, out float minA, out float maxA);
-            Util.ProjectVerticesOnAxis(verticesB, axis, out float minB, out float maxB);
+            Util.ProjectCircleOnAxis(circleCenter, circleRadius, axis, out float minA, out float maxA);
+            Util.ProjectVerticesOnAxis(polygonVertices, axis, out float minB, out float maxB);
             
             if (minA >= maxB || minB >= maxA) return false;
 
@@ -136,13 +136,13 @@ public static class Collisions
             }
         }
 
-        MonoVector cornerAxis = centerA - closestVertex;
+        MonoVector cornerAxis = circleCenter - closestVertex;
         if (cornerAxis.LengthSquared > 0.01f)
         {
             cornerAxis = cornerAxis.Normalize();
 
-            Util.ProjectCircleOnAxis(centerA, radiusA, cornerAxis, out float minA, out float maxA);
-            Util.ProjectVerticesOnAxis(verticesB, cornerAxis, out float minB, out float maxB);
+            Util.ProjectCircleOnAxis(circleCenter, circleRadius, cornerAxis, out float minA, out float maxA);
+            Util.ProjectVerticesOnAxis(polygonVertices, cornerAxis, out float minB, out float maxB);
 
             if (minA >= maxB || minB >= maxA) return false;
 
@@ -154,7 +154,7 @@ public static class Collisions
             }
         }
 
-        if (MonoVector.Dot(normal, centerA - centerB) < 0) { normal = -normal; }
+        if (MonoVector.Dot(normal, circleCenter - polygonCenter) < 0) { normal = -normal; }
 
         return true;
     }
@@ -182,36 +182,115 @@ public static class Collisions
     }
     
     /* --- Contact Points --- */
-    public static void GetContactPoints(RigidBody bodyA, RigidBody bodyB, out MonoVector contact1, out MonoVector contact2, out int contactCount)
+    public static void GetContactPoints(RigidBody bodyA, RigidBody bodyB, out MonoVector contactPoint1, out MonoVector contactPoint2, out int contactCount)
     {
         ShapeType shapeA = bodyA.ShapeType;
         ShapeType shapeB = bodyB.ShapeType;
 
-        contact1 = MonoVector.Zero;
-        contact2 = MonoVector.Zero;
+        contactPoint1 = MonoVector.Zero;
+        contactPoint2 = MonoVector.Zero;
         contactCount = 0;
         
         if (shapeA == shapeB)
         {
             if (shapeA == ShapeType.Circle)
             {
-                contact1 = GetCircleContactPoint(bodyA.Position, bodyA.Radius, bodyB.Position, bodyB.Radius);
+                GetCircleContactPoint(bodyA.Position, bodyA.Radius, bodyB.Position, out contactPoint1);
                 contactCount = 1;
             }
 
-            if (shapeA == ShapeType.Box) ;
+            if (shapeA == ShapeType.Box)
+            {
+                GetPolygonContactPoint(bodyA.GetTransformedVertices(), bodyB.GetTransformedVertices(), out contactPoint1, out contactPoint2,  out contactCount);
+            }
         }
         else
         {
-            if (shapeA == ShapeType.Circle && shapeB == ShapeType.Box) ;
-            if (shapeA == ShapeType.Box && shapeB == ShapeType.Circle) ;
+            if (shapeA == ShapeType.Circle && shapeB == ShapeType.Box) 
+            {
+                GetCirclePolygonContactPoint(bodyA.Position, bodyA.Radius, bodyB.Position, bodyB.GetTransformedVertices(), out contactPoint1);
+                contactCount = 1;
+            }
+            if (shapeA == ShapeType.Box && shapeB == ShapeType.Circle) 
+            {
+                GetCirclePolygonContactPoint(bodyB.Position, bodyB.Radius, bodyA.Position, bodyA.GetTransformedVertices(), out contactPoint1);
+                contactCount = 1;
+            }
         }
     }
     
-    private static MonoVector GetCircleContactPoint(MonoVector centerA, float radiusA, MonoVector centerB, float radiusB)
+    private static void GetCircleContactPoint(MonoVector centerA, float radiusA, MonoVector centerB, out MonoVector contactPoint)
     {
         MonoVector dir = (centerB - centerA).Normalize();
         
-        return centerA + radiusA * dir;
+        contactPoint = centerA + radiusA * dir;
+    }
+
+    private static void GetCirclePolygonContactPoint(MonoVector circleCenter, float circleRadius, MonoVector polygonCenter, MonoVector[] polygonVertices, out MonoVector contactPoint)
+    {
+        contactPoint = MonoVector.Zero;
+        float minDistanceSquared = float.MaxValue;
+        
+        for (int i = 0; i < polygonVertices.Length; i++)
+        {
+            MonoVector va = polygonVertices[i];
+            MonoVector vb = polygonVertices[(i + 1) % polygonVertices.Length];
+            
+            Util.GetPointSegmentDistance(circleCenter, va, vb, out float distanceSquared, out MonoVector cp);
+            if (distanceSquared < minDistanceSquared)
+            {
+                minDistanceSquared =  distanceSquared;
+                contactPoint = cp;
+            }
+        }
+    }
+
+    private static void GetPolygonContactPoint(MonoVector[] verticesA, MonoVector[] verticesB, out MonoVector contactPoint1, out MonoVector contactPoint2, out int contactCount)
+    {
+        contactPoint1 = MonoVector.Zero;
+        contactPoint2 = MonoVector.Zero;
+        contactCount = 0;
+        
+        float minDistanceSquared = float.MaxValue;
+        
+        void TestPointSegment(MonoVector p, MonoVector va, MonoVector vb, ref MonoVector contactPoint1, ref MonoVector contactPoint2, ref int contactCount)
+        {
+            Util.GetPointSegmentDistance(p, va, vb, out float distanceSquared, out MonoVector cp);
+
+            if (distanceSquared < minDistanceSquared - 0.05f)
+            {
+                minDistanceSquared = distanceSquared;
+                contactPoint1 = cp;
+                contactPoint2 = MonoVector.Zero;
+                contactCount = 1;
+            }
+            
+            else if (Util.IsNearlyEqual(distanceSquared, minDistanceSquared))
+            {
+                if (contactCount == 1)
+                {
+                    if (!Util.IsNearlyEqual(cp, contactPoint1))
+                    {
+                        contactPoint2 = cp;
+                        contactCount = 2;
+                    }
+                }
+            }
+        }
+
+        for (int i = 0; i < verticesA.Length; i++)
+        {
+            for (int j = 0; j < verticesB.Length; j++)
+            {
+                TestPointSegment(verticesA[i], verticesB[j], verticesB[(j + 1) % verticesB.Length], ref contactPoint1, ref contactPoint2, ref contactCount);
+            }
+        }
+        for (int i = 0; i < verticesB.Length; i++)
+        {
+            for (int j = 0; j < verticesA.Length; j++)
+            {
+                TestPointSegment(verticesB[i], verticesA[j], verticesA[(j + 1) % verticesA.Length], ref contactPoint1, ref contactPoint2, ref contactCount);
+            }
+        }
     }
 }

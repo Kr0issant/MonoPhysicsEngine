@@ -147,6 +147,13 @@ public readonly struct MonoVector : IEquatable<MonoVector>
         return MathF.Sqrt((dx * dx) + (dy * dy));
     }
 
+    public static float DistanceSquaredBetween(MonoVector a, MonoVector b)
+    {
+        float dx = a.X - b.X;
+        float dy = a.Y - b.Y;
+        return (dx * dx) + (dy * dy);
+    }
+
     public static float AngleBetween(MonoVector a, MonoVector b)
     {
         return (float)Math.Acos(Dot(a, b));

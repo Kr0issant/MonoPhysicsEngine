@@ -184,7 +184,7 @@ public class Game1 : Game
             RigidBody body = world.GetBody(i);
             MonoAABB box = body.GetAABB();
 
-            if (box.Max.Y < bottom) { world.RemoveBody(body); }
+            if (!body.IsStatic && box.Max.Y < bottom) { world.RemoveBody(body); }
         }
         
         base.Update(gameTime);
