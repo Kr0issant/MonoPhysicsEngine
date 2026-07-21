@@ -27,6 +27,8 @@ public sealed class World
     private Vector2[] vertexBuffer;
     private List<MonoManifold> contacts;
 
+    public List<MonoVector> ContactPoints = new List<MonoVector>();
+
     public World()
     {
         // gravity = new MonoVector(0, -981f);
@@ -76,8 +78,9 @@ public sealed class World
                     RigidBody bodyB = bodies[j];
 
                     if (bodyA.IsStatic && bodyB.IsStatic) continue;
+                    if (!Collisions.CheckAABBCollision(bodyA.GetAABB(), bodyB.GetAABB())) continue;
 
-                    if (Collisions.CheckGeneralCollision(bodyA, bodyB, out MonoVector normal, out float depth))
+                    if (Collisions.CheckCollision(bodyA, bodyB, out MonoVector normal, out float depth))
                     {
                         float totalInvMass = bodyA.InvMass + bodyB.InvMass;
                         if (totalInvMass > 0f)
@@ -93,7 +96,8 @@ public sealed class World
                             if (!bodyB.IsStatic) bodyB.MoveBy(-correctionVector * bodyB.InvMass);
                         }
 
-                        MonoManifold contact = new MonoManifold(bodyA, bodyB, normal, depth, MonoVector.Zero, MonoVector.Zero, 0);
+                        Collisions.GetContactPoints(bodyA, bodyB, out MonoVector contact1, out MonoVector contact2, out int contactCount);
+                        MonoManifold contact = new MonoManifold(bodyA, bodyB, normal, depth, contact1, contact2, contactCount);
                         contacts.Add(contact);
                         
                         // Collisions.ResolveCollision(bodyA, bodyB, normal, depth);
@@ -101,17 +105,22 @@ public sealed class World
                 }
             }
 
+            ContactPoints.Clear();
             /* --- Collision Resolution --- */
             for (int i = contacts.Count - 1; i >= 0; i--)
             {
                 MonoManifold contact = contacts[i];
                 Collisions.ResolveCollision(in contact);
+                
+                if (contact.ContactCount > 0) ContactPoints.Add(contact.Contact1);
+                if (contact.ContactCount > 1) ContactPoints.Add(contact.Contact2);
+                
                 contacts.RemoveAt(i);
             }
         }
     }
 
-    public void DrawShapes(Shapes shapes, World world, bool renderAABBs)
+    public void DrawShapes(Shapes shapes, World world, bool renderAABBs, bool renderContactPoints)
     {
         for (int i = 0; i < world.BodyCount; i++)
         {
@@ -135,6 +144,14 @@ public sealed class World
                 MonoAABB box = body.GetAABB();
                 Vector2 center = ((box.Min + box.Max) / 2f).ToVector2();
                 shapes.DrawRectangle(center, box.Max.X - box.Min.X, box.Max.Y - box.Min.Y, Color.White, Shapes.FillMode.Border);
+            }
+        }
+
+        if (renderContactPoints)
+        {
+            foreach (MonoVector cp in ContactPoints)
+            {
+                shapes.DrawCircle(cp.ToVector2(), 2f, Color.Red);
             }
         }
     }

@@ -5,7 +5,8 @@ namespace MonoPhysicsEngine;
 
 public static class Collisions
 {
-    public static bool CheckGeneralCollision(RigidBody bodyA, RigidBody bodyB, out MonoVector normal, out float depth)
+    /* --- Detection --- */
+    public static bool CheckCollision(RigidBody bodyA, RigidBody bodyB, out MonoVector normal, out float depth)
     {
         ShapeType shapeA = bodyA.ShapeType;
         ShapeType shapeB = bodyB.ShapeType;
@@ -40,8 +41,16 @@ public static class Collisions
 
         return false;
     }
-    
-    public static bool CheckCircleCollision(MonoVector centerA, float radiusA, MonoVector centerB, float radiusB, out MonoVector normal, out float depth)
+
+    public static bool CheckAABBCollision(MonoAABB a, MonoAABB b)
+    {
+        if (a.Max.X <= b.Min.X || b.Max.X <= a.Min.X) return false;
+        if (a.Max.Y <= b.Min.Y || b.Max.Y <= a.Min.Y) return false;
+
+        return true;
+    }
+
+    private static bool CheckCircleCollision(MonoVector centerA, float radiusA, MonoVector centerB, float radiusB, out MonoVector normal, out float depth)
     {
         normal = MonoVector.Zero;
         depth = 0f;
@@ -54,8 +63,8 @@ public static class Collisions
         depth = (radiusA + radiusB) - distance;
         return true;
     }
-    
-    public static bool CheckPolygonCollision(MonoVector centerA, MonoVector[] verticesA, MonoVector centerB, MonoVector[] verticesB, out MonoVector normal, out float depth)
+
+    private static bool CheckPolygonCollision(MonoVector centerA, MonoVector[] verticesA, MonoVector centerB, MonoVector[] verticesB, out MonoVector normal, out float depth)
     {
         normal = MonoVector.Zero;
         depth = float.MaxValue;
@@ -89,8 +98,8 @@ public static class Collisions
         
         return true;
     }
-    
-    public static bool CheckCirclePolygonCollision(MonoVector centerA, float radiusA, MonoVector centerB, MonoVector[] verticesB, out MonoVector normal, out float depth)
+
+    private static bool CheckCirclePolygonCollision(MonoVector centerA, float radiusA, MonoVector centerB, MonoVector[] verticesB, out MonoVector normal, out float depth)
     {
         normal = MonoVector.Zero;
         depth = float.MaxValue;
@@ -150,6 +159,7 @@ public static class Collisions
         return true;
     }
     
+    /* --- Resolution --- */
     public static void ResolveCollision(in MonoManifold contact)
     {
         RigidBody bodyA = contact.BodyA;
@@ -169,5 +179,39 @@ public static class Collisions
         
         bodyA.LinearVelocity += impulse * bodyA.InvMass;
         bodyB.LinearVelocity -= impulse * bodyB.InvMass;
+    }
+    
+    /* --- Contact Points --- */
+    public static void GetContactPoints(RigidBody bodyA, RigidBody bodyB, out MonoVector contact1, out MonoVector contact2, out int contactCount)
+    {
+        ShapeType shapeA = bodyA.ShapeType;
+        ShapeType shapeB = bodyB.ShapeType;
+
+        contact1 = MonoVector.Zero;
+        contact2 = MonoVector.Zero;
+        contactCount = 0;
+        
+        if (shapeA == shapeB)
+        {
+            if (shapeA == ShapeType.Circle)
+            {
+                contact1 = GetCircleContactPoint(bodyA.Position, bodyA.Radius, bodyB.Position, bodyB.Radius);
+                contactCount = 1;
+            }
+
+            if (shapeA == ShapeType.Box) ;
+        }
+        else
+        {
+            if (shapeA == ShapeType.Circle && shapeB == ShapeType.Box) ;
+            if (shapeA == ShapeType.Box && shapeB == ShapeType.Circle) ;
+        }
+    }
+    
+    private static MonoVector GetCircleContactPoint(MonoVector centerA, float radiusA, MonoVector centerB, float radiusB)
+    {
+        MonoVector dir = (centerB - centerA).Normalize();
+        
+        return centerA + radiusA * dir;
     }
 }

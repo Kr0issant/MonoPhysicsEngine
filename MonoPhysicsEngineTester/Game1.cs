@@ -38,7 +38,8 @@ public class Game1 : Game
     // private Color SHAPE_FILL_COLOR = Color.White;
     private Color SHAPE_STATIC_FILL_COLOR = new Color(80, 80, 80);
 
-    private bool RENDER_AABBs = true;
+    private bool RENDER_AABBs = false;
+    private bool RENDER_CONTACT_POINTS = true;
     private bool FPS_CAP_60 = true;
     
     private World world;
@@ -197,7 +198,7 @@ public class Game1 : Game
         frameCounter.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
         
         shapes.Begin(camera);
-        world.DrawShapes(shapes, world, RENDER_AABBs);
+        world.DrawShapes(shapes, world, RENDER_AABBs, RENDER_CONTACT_POINTS);
         shapes.End();
 
         camera.GetScreenBounds(out float left, out float right, out float bottom, out float top);
