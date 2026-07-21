@@ -263,4 +263,25 @@ public static class Collisions
         bodyA.LinearVelocity += impulse * bodyA.InvMass;
         bodyB.LinearVelocity -= impulse * bodyB.InvMass;
     }
+    
+    public static void ResolveCollision(in MonoManifold contact)
+    {
+        RigidBody bodyA = contact.BodyA;
+        RigidBody bodyB = contact.BodyB;
+        MonoVector normal = contact.Normal;
+        float depth = contact.Depth;
+        
+        MonoVector relativeVelocity = bodyA.LinearVelocity - bodyB.LinearVelocity;
+
+        if (MonoVector.Dot(relativeVelocity, normal) > 0f) return; // Bodies are already moving apart
+        
+        float e = MathF.Min(bodyA.Restitution, bodyB.Restitution);
+        float j = -(1f + e) * MonoVector.Dot(relativeVelocity, normal);
+        j /= bodyA.InvMass + bodyB.InvMass;
+
+        MonoVector impulse = j * normal;
+        
+        bodyA.LinearVelocity += impulse * bodyA.InvMass;
+        bodyB.LinearVelocity -= impulse * bodyB.InvMass;
+    }
 }
